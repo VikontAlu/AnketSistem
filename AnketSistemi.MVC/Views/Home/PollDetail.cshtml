@@ -1,0 +1,175 @@
+﻿@{
+    ViewData["Title"] = "Anket Çöz";
+}
+
+<div class="container mt-4" style="max-width: 800px;">
+
+    <div id="loadingPoll" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3 text-muted">Anket soruları hazırlanıyor...</p>
+    </div>
+
+    <div id="pollContainer" class="d-none">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body text-center bg-primary text-white rounded">
+                <h2 id="pollTitle" class="fw-bold"></h2>
+                <p id="pollDetail" class="mb-0"></p>
+            </div>
+        </div>
+
+        <div id="alertBox" class="alert d-none"></div>
+
+        <form id="pollForm">
+            <div id="questionsList"></div>
+
+            <div class="text-end mt-4 mb-5">
+                <button type="submit" class="btn btn-success btn-lg fw-bold px-5 shadow">
+                    <i class="bi bi-send-check"></i> Cevapları Gönder
+                </button>
+            </div>
+        </form>
+
+        <div id="feedbackContainer" class="card shadow-lg border-0 d-none text-center p-5 mt-4">
+            <h3 class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Tebrikler!</h3>
+            <p class="text-muted">Cevaplarınız başarıyla kaydedildi. Bu anketi nasıl değerlendirirsiniz?</p>
+
+            <select id="pollScore" class="form-select form-select-lg w-50 mx-auto mb-3 text-center text-warning fw-bold">
+                <option value="5">⭐⭐⭐⭐⭐ Harika</option>
+                <option value="4">⭐⭐⭐⭐ İyi</option>
+                <option value="3">⭐⭐⭐ Orta</option>
+                <option value="2">⭐⭐ Kötü</option>
+                <option value="1">⭐ Çok Kötü</option>
+            </select>
+
+            <textarea id="pollComment" class="form-control mb-4" rows="2" placeholder="Görüşleriniz bizim için değerli..."></textarea>
+
+            <div>
+                <button id="sendFeedbackBtn" class="btn btn-warning fw-bold px-4">Puanı Gönder</button>
+                <a href="/Home/Index" class="btn btn-outline-secondary px-4 ms-2">Değerlendirmeden Çık</a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const currentPollId = @ViewBag.PollId;
+        const apiUrl = "https://localhost:7122"; // DİKKAT: KENDİ PORTUNU YAZMAYI UNUTMA!
+
+        $(document).ready(function () {
+
+            // 1. Soruları Getir
+            $.ajax({
+                url: `${apiUrl}/api/Poll/${currentPollId}`,
+                type: "GET",
+                success: function (poll) {
+                    $("#loadingPoll").addClass("d-none");
+                    $("#pollContainer").removeClass("d-none");
+
+                    $("#pollTitle").text(poll.title);
+                    $("#pollDetail").text(poll.detail ? poll.detail : "Bu anket için açıklama bulunmamaktadır.");
+
+                    let questionsHtml = "";
+                    if (poll.questions && poll.questions.length > 0) {
+                        poll.questions.forEach((q, index) => {
+                            questionsHtml += `
+                                <div class="card shadow-sm border-0 mb-4 question-card">
+                                    <div class="card-header bg-light border-0 pt-3">
+                                        <h5 class="fw-bold text-dark"><span class="text-primary">${index + 1}.</span> ${q.text}</h5>
+                                    </div>
+                                    <div class="card-body">
+                            `;
+
+                            if (q.choices && q.choices.length > 0) {
+                                q.choices.forEach(choice => {
+                                    questionsHtml += `
+                                        <div class="form-check mb-2 custom-radio">
+                                            <input class="form-check-input" type="radio" name="question_${q.id}" id="choice_${choice.id}" value="${choice.id}" required>
+                                            <label class="form-check-label ms-2" for="choice_${choice.id}">
+                                                ${choice.text}
+                                            </label>
+                                        </div>
+                                    `;
+                                });
+                            }
+                            questionsHtml += `</div></div>`;
+                        });
+                        $("#questionsList").html(questionsHtml);
+                    } else {
+                        $("#questionsList").html("<div class='alert alert-warning'>Bu ankete henüz soru eklenmemiş.</div>");
+                        $("button[type='submit']").hide();
+                    }
+                },
+                error: function () {
+                    $("#loadingPoll").html("<div class='alert alert-danger'>Anket bulunamadı.</div>");
+                }
+            });
+
+            // 2. Anket Cevaplarını Gönder
+            $("#pollForm").submit(function (e) {
+                e.preventDefault();
+
+                const token = localStorage.getItem("token");
+                if (!token) {
+                    alert("Anketi çözmek için lütfen giriş yapın!");
+                    window.location.href = "/Auth/Login";
+                    return;
+                }
+
+                let answers = [];
+                $("input[type='radio']:checked").each(function () {
+                    let qId = $(this).attr("name").split("_")[1];
+                    let cId = $(this).val();
+
+                    answers.push({
+                        pollQuestionId: parseInt(qId),
+                        questionChoiceId: parseInt(cId)
+                    });
+                });
+
+                $.ajax({
+                    url: `${apiUrl}/api/Response`,
+                    type: "POST",
+                    contentType: "application/json",
+                    headers: { "Authorization": "Bearer " + token },
+                    data: JSON.stringify(answers),
+                    success: function (res) {
+                        // Formu gizle ve Yıldızlı Değerlendirme ekranını çıkar!
+                        $("#pollForm").slideUp("fast", function() {
+                            $("#feedbackContainer").removeClass("d-none").hide().fadeIn("slow");
+                        });
+                    },
+                    error: function (err) {
+                        alert("Hata oluştu! Daha önce bu anketi çözmüş olabilirsiniz.");
+                    }
+                });
+            });
+
+            // 3. Yıldızlı Geri Bildirimi Gönder
+            $("#sendFeedbackBtn").click(function() {
+                const token = localStorage.getItem("token");
+                const feedbackData = {
+                    pollId: currentPollId,
+                    score: parseInt($("#pollScore").val()),
+                    userComment: $("#pollComment").val()
+                };
+
+                $.ajax({
+                    url: `${apiUrl}/api/PollFeedback`,
+                    type: "POST",
+                    contentType: "application/json",
+                    headers: { "Authorization": "Bearer " + token },
+                    data: JSON.stringify(feedbackData),
+                    success: function (res) {
+                        $("#feedbackContainer").html(`<h4 class='text-success fw-bold'><i class='bi bi-heart-fill text-danger'></i> Değerlendirmeniz için teşekkürler!</h4><p>Ana sayfaya yönlendiriliyorsunuz...</p>`);
+                        setTimeout(() => { window.location.href = "/Home/Index"; }, 2500);
+                    },
+                    error: function(err) {
+                        alert("Değerlendirme gönderilirken bir hata oluştu.");
+                    }
+                });
+            });
+        });
+    </script>
+}

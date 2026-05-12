@@ -1,0 +1,93 @@
+﻿@{
+    ViewData["Title"] = "Yeni Anket Oluştur";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml"; // Admin temamızı kullanıyoruz
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark"><i class="bi bi-plus-circle-fill text-primary me-2"></i>Yeni Anket Oluştur</h2>
+    <a href="/Admin/Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Panele Dön</a>
+</div>
+
+<div class="card shadow-sm border-0" style="max-width: 800px;">
+    <div class="card-body p-4">
+        <div id="alertBox" class="alert d-none"></div>
+
+        <form id="createPollForm">
+            <div class="mb-3">
+                <label class="form-label fw-bold">Anket Başlığı</label>
+                <input type="text" id="title" class="form-control form-control-lg" placeholder="Örn: 2026 Yazılım Trendleri" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Anket Açıklaması (Detay)</label>
+                <textarea id="detail" class="form-control" rows="3" placeholder="Kullanıcılara anketin amacını kısaca açıklayın..." required></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold">Bitiş Tarihi</label>
+                <input type="datetime-local" id="expireDate" class="form-control" required>
+            </div>
+
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary btn-lg fw-bold px-5">
+                    <i class="bi bi-save2"></i> Anketi Kaydet
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Bugünün tarihini varsayılan olarak yarına ayarlayalım (Kullanım kolaylığı)
+            let tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
+            $("#expireDate").val(tomorrow.toISOString().slice(0, 16));
+
+            $("#createPollForm").submit(function (e) {
+                e.preventDefault();
+
+                const token = localStorage.getItem("token");
+                if (!token) {
+                    alert("Oturumunuz düşmüş. Lütfen tekrar giriş yapın.");
+                    window.location.href = "/Auth/Login";
+                    return;
+                }
+
+                // API'nin beklediği Poll modeli verileri
+                const pollData = {
+                    title: $("#title").val(),
+                    detail: $("#detail").val(),
+                    expireDate: $("#expireDate").val(),
+                    isActive: true
+                };
+
+                // DİKKAT: Port numaranı kendi API projene göre düzelt!
+                $.ajax({
+                    url: "https://localhost:7122/api/Poll",
+                    type: "POST",
+                    contentType: "application/json",
+                    headers: { "Authorization": "Bearer " + token }, // Güvenlik tokeni (Sadece admin/yetkili)
+                    data: JSON.stringify(pollData),
+                    success: function (response) {
+                        $("#alertBox").removeClass("d-none alert-danger").addClass("alert-success")
+                                      .text("Harika! Anket başarıyla oluşturuldu. Panele yönlendiriliyorsunuz...");
+
+                        // Formu temizle ve butonu kilitle
+                        $("#createPollForm")[0].reset();
+                        $("button[type='submit']").prop("disabled", true);
+
+                        // 2 saniye sonra Admin paneline geri dön
+                        setTimeout(() => { window.location.href = "/Admin/Index"; }, 2000);
+                    },
+                    error: function (err) {
+                        $("#alertBox").removeClass("d-none alert-success").addClass("alert-danger")
+                                      .text("Hata: Anket oluşturulamadı. Lütfen bilgileri kontrol edin.");
+                    }
+                });
+            });
+        });
+    </script>
+}

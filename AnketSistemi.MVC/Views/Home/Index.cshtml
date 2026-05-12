@@ -1,8 +1,63 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Ana Sayfa";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="text-center mb-5">
+    <h1 class="display-4 fw-bold">Anketlere Katılın!</h1>
+    <p class="lead text-muted">Aşağıdaki anketlerden dilediğinize katılıp fikirlerinizi belirtebilirsiniz.</p>
 </div>
+
+<div class="row" id="pollList">
+    <div class="text-center w-100" id="loading">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">Anketler yükleniyor, lütfen bekleyin...</p>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            loadPolls();
+        });
+
+        function loadPolls() {
+            // DİKKAT: Buradaki URL kısmına API projenin port numarasını yaz!
+            const apiUrl = "https://localhost:7122/api/Poll";
+
+            $.ajax({
+                url: apiUrl,
+                type: "GET",
+                success: function(data) {
+                    $("#loading").hide();
+                    let html = "";
+
+                    if(data.length === 0) {
+                        $("#pollList").html("<div class='alert alert-warning text-center w-100'>Şu an aktif anket bulunmamaktadır.</div>");
+                        return;
+                    }
+
+                    data.forEach(function(poll) {
+                        html += `
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 shadow-sm border-0">
+                                <div class="card-body">
+                                    <h5 class="card-title fw-bold text-primary">${poll.title}</h5>
+                                    <p class="card-text text-muted">${poll.detail ? poll.detail : 'Bu anket için açıklama girilmemiştir.'}</p>
+                                </div>
+                                <div class="card-footer bg-white border-0 text-end pb-3">
+                                    <a href="/Home/PollDetail/${poll.id}" class="btn btn-outline-primary btn-sm fw-bold">Ankete Git ➡</a>
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+
+                    $("#pollList").html(html);
+                },
+                error: function(err) {
+                    $("#loading").hide();
+                    $("#pollList").html("<div class='alert alert-danger w-100 text-center'>Anketler yüklenemedi. API projesinin çalıştığından ve Port numarasının doğru olduğundan emin olun!</div>");
+                }
+            });
+        }
+    </script>
+}
