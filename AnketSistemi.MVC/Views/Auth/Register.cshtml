@@ -63,7 +63,7 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        // BUG FIX #7: API URL Razor'dan geliyor
+
         const apiBaseUrl = "@apiBaseUrl";
 
         $(document).ready(function () {
@@ -77,7 +77,6 @@
                 };
 
                 $.ajax({
-                    // BUG FIX #3: Tutarsiz https/http giderildi, Razor'dan geliyor
                     url: apiBaseUrl + "/api/Auth/register",
                     type: "POST",
                     contentType: "application/json",
@@ -90,7 +89,6 @@
                     error: function (err) {
                         let errorMsg = "Hata: Kayit islemi basarisiz.";
                         if (err.responseJSON) {
-                            // Identity hata mesajlarini goster
                             const errors = err.responseJSON;
                             if (Array.isArray(errors)) {
                                 errorMsg = errors.map(e => e.description).join(" ");

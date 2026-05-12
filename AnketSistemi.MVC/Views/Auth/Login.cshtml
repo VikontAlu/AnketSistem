@@ -55,11 +55,13 @@
                 <a href="/Auth/Register" class="text-decoration-none text-secondary">Hesabin yok mu? Kayit Ol</a>
             </div>
         </form>
+        <div class="text-center mt-3">
+            <a href="/Auth/ForgotPassword" class="text-decoration-none text-danger small">Şifremi Unuttum</a>
+        </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        // BUG FIX #7: API URL Razor'dan geliyor, hardcode degil
         const apiBaseUrl = "@apiBaseUrl";
 
         $(document).ready(function () {
@@ -72,15 +74,12 @@
                 };
 
                 $.ajax({
-                    // BUG FIX #1: Eksik virgul eklendi
-                    // BUG FIX #3: https/http tutarsizligi giderildi, Razor'dan geliyor
                     url: apiBaseUrl + "/api/Auth/login",
                     type: "POST",
                     contentType: "application/json",
                     data: JSON.stringify(loginData),
                     success: function (response) {
                         localStorage.setItem("token", response.token);
-                        // BUG FIX #6: Admin kontrolu hardcoded email yerine API'den gelen isAdmin alani ile yapiliyor
                         localStorage.setItem("isAdmin", response.isAdmin ? "true" : "false");
 
                         $("#alertBox").removeClass("d-none alert-danger").addClass("alert-success")

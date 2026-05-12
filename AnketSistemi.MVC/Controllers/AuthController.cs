@@ -30,6 +30,19 @@ namespace AnketSistemi.MVC.Controllers
             ViewBag.ApiBaseUrl = _config["ApiBaseUrl"];
             return View();
         }
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult ResetPassword(string email, string token)
+        {
+            ViewBag.Email = email;
+            ViewBag.Token = token;
+            return View();
+        }
     }
 }
     

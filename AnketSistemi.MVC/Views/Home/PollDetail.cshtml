@@ -56,12 +56,11 @@
 @section Scripts {
     <script>
         const currentPollId = @ViewBag.PollId;
-        // BUG FIX #7: API URL Razor'dan geliyor
+
         const apiBaseUrl = "@apiBaseUrl";
 
         $(document).ready(function () {
 
-            // 1. Sorulari Getir
             $.ajax({
                 url: `${apiBaseUrl}/api/Poll/${currentPollId}`,
                 type: "GET",
@@ -110,7 +109,6 @@
                 }
             });
 
-            // 2. Anket Cevaplarini Gonder
             $("#pollForm").submit(function (e) {
                 e.preventDefault();
 
@@ -127,14 +125,12 @@
                     let cId = $(this).val();
 
                     answers.push({
-                        // BUG FIX #4: Alan adlari API DTO'suyla eslesiyor (questionId, selectedOptionId)
                         questionId: parseInt(qId),
                         selectedOptionId: parseInt(cId)
                     });
                 });
 
                 $.ajax({
-                    // BUG FIX #4: Dogru endpoint URL'si (/Submit + pollId query param)
                     url: `${apiBaseUrl}/api/Response/Submit?pollId=${currentPollId}`,
                     type: "POST",
                     contentType: "application/json",
@@ -155,7 +151,6 @@
                 });
             });
 
-            // 3. Yildizli Geri Bildirimi Gonder
             $("#sendFeedbackBtn").click(function() {
                 const token = localStorage.getItem("token");
                 const feedbackData = {

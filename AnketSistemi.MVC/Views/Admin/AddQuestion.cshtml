@@ -31,7 +31,6 @@
                     </div>
 
                     <div id="choicesContainer">
-                        <!-- JavaScript ile dolacak -->
                     </div>
 
                     <hr class="my-4">
@@ -52,11 +51,11 @@
         const questionId = @(questionId ?? 0);
         const apiBaseUrl = "@apiBaseUrl";
         const letters = ["A","B","C","D","E","F","G","H"];
-        let currentChoices = []; // düzenleme modunda mevcut seçenekleri tutar
+        let currentChoices = []; 
 
         $(function(){
             if (questionId > 0) {
-                // Düzenleme modu: soruyu ve seçenekleri yükle
+
                 $.get(`${apiBaseUrl}/api/Poll/${currentPollId}`, function(poll){
                     const question = poll.questions.find(q => q.id == questionId);
                     if (!question) return;
@@ -65,7 +64,7 @@
                     renderChoices();
                 });
             } else {
-                // Yeni soru modu: boş iki seçenek
+ 
                 currentChoices = [{ choiceText: "", orderIndex: 0 }, { choiceText: "", orderIndex: 1 }];
                 renderChoices();
             }
@@ -82,13 +81,12 @@
                 $("#choicesContainer").html(html);
             }
 
-            // Seçenek ekleme
+
             $("#addChoiceBtn").click(function(){
                 currentChoices.push({ choiceText: "", orderIndex: currentChoices.length });
                 renderChoices();
             });
 
-            // Seçenek silme
             $(document).on("click", ".remove-choice", function(){
                 if (currentChoices.length <= 2) return;
                 const index = $(this).closest(".choice-row").data("index");
@@ -96,13 +94,10 @@
                 renderChoices();
             });
 
-            // Form gönderimi
             $("#addQuestionForm").submit(function(e){
                 e.preventDefault();
                 const token = localStorage.getItem("token");
                 if (!token) { window.location.href = "/Auth/Login"; return; }
-
-                // Seçenekleri güncelle
                 $(".choice-input").each(function(i){
                     if (i < currentChoices.length) {
                         currentChoices[i].choiceText = $(this).val().trim();
@@ -110,10 +105,8 @@
                 });
 
                 if (questionId > 0) {
-                    // Güncelleme: sadece soru metni ve seçenekler (seçenekleri ayrı ayrı PUT ile güncelle)
                     updateQuestion(token);
                 } else {
-                    // Yeni soru ekleme
                     createQuestion(token);
                 }
             });
@@ -133,7 +126,6 @@
                     data: JSON.stringify(questionData),
                     success: function(res){
                         const qId = res.questionId;
-                        // Seçenekleri ekle
                         let promises = currentChoices.map((c, i) => {
                             return $.ajax({
                                 url: `${apiBaseUrl}/api/Poll/AddChoice`,
@@ -153,7 +145,6 @@
             }
 
             function updateQuestion(token) {
-                // Soru metnini güncelle
                 $.ajax({
                     url: `${apiBaseUrl}/api/Poll/Question/${questionId}`,
                     type: "PUT",
@@ -161,19 +152,16 @@
                     headers: { "Authorization": "Bearer " + token },
                     data: JSON.stringify({ pollId: currentPollId, questionText: $("#questionText").val(), format: 2, isMandatory: true }),
                     success: function(){
-                        // Mevcut seçenekleri güncelle/sil/ekle mantığı basit olsun: hepsini silip yeniden ekleyelim veya var olanları PUT ile güncelleyip yenilerini ekleyelim.
-                        // Basitlik için tüm seçenekleri silip yeniden ekleyelim.
                         $.get(`${apiBaseUrl}/api/Poll/${currentPollId}`, function(poll){
                             const question = poll.questions.find(q => q.id == questionId);
                             if (!question) return;
-                            // Mevcut seçenekleri pasif yap (sil)
+
                             let deletePromises = question.choices.map(c => $.ajax({
                                 url: `${apiBaseUrl}/api/Poll/Choice/${c.id}`,
                                 type: "DELETE",
                                 headers: { "Authorization": "Bearer " + token }
                             }));
                             Promise.all(deletePromises).then(() => {
-                                // Yeni seçenekleri ekle
                                 let addPromises = currentChoices.map((c, i) => $.ajax({
                                     url: `${apiBaseUrl}/api/Poll/AddChoice`,
                                     type: "POST",

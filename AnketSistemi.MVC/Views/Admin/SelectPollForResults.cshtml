@@ -1,0 +1,55 @@
+﻿@{
+    ViewData["Title"] = "Sonuçlar İçin Anket Seçin";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var apiBaseUrl = ViewBag.ApiBaseUrl as string ?? "http://localhost:5229";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold"><i class="bi bi-bar-chart-fill text-info me-2"></i>Sonuçlar İçin Anket Seçin</h2>
+    <a href="/Admin/Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Panele Dön</a>
+</div>
+
+<div class="row" id="pollList">
+    <div class="text-center w-100" id="loading">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2">Anketler yükleniyor...</p>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const apiBaseUrl = "@apiBaseUrl";
+        $(function(){
+            $.ajax({
+                url: `${apiBaseUrl}/api/Poll`,
+                type: "GET",
+                headers: { "Authorization": "Bearer " + localStorage.getItem("token") },
+                success: function(polls){
+                    $("#loading").hide();
+                    let html = "";
+                    if (polls.length === 0) {
+                        html = "<div class='alert alert-warning w-100'>Henüz anket bulunmamaktadır.</div>";
+                    } else {
+                        polls.forEach(p => {
+                            html += `
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100 shadow-sm">
+                                    <div class="card-body">
+                                        <h5 class="card-title">${p.title}</h5>
+                                        <p class="card-text text-muted">${p.detail || ''}</p>
+                                    </div>
+                                    <div class="card-footer bg-white text-end">
+                                        <a href="/Admin/Results/${p.id}" class="btn btn-primary btn-sm">
+                                            <i class="bi bi-bar-chart"></i> Sonuçları Gör
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>`;
+                        });
+                    }
+                    $("#pollList").html(html);
+                }
+            });
+        });
+    </script>
+}

@@ -20,7 +20,6 @@ namespace AnketSistemi.API.Controllers
             _responseRepo = responseRepo;
         }
 
-        // BUG FIX #4: URL artik /api/Response/Submit?pollId=X seklinde cagriliyor
         [HttpPost("Submit")]
         public async Task<IActionResult> Submit([FromQuery] int pollId, [FromBody] List<QuestionAnswerDto> answers, [FromServices] IGenericRepository<Poll> pollRepo)
         {
@@ -44,7 +43,6 @@ namespace AnketSistemi.API.Controllers
                 var response = new UserResponse
                 {
                     PollId = pollId,
-                    // BUG FIX #4: DTO field adlari duzeltildi (QuestionId ve SelectedOptionId)
                     PollQuestionId = item.QuestionId,
                     WrittenAnswer = item.TextAnswer,
                     SelectedChoiceId = item.SelectedOptionId,

@@ -42,7 +42,6 @@
     <script>
         const apiBaseUrl = "@apiBaseUrl";
         $(function(){
-            // Anketleri yükle
             $.get(`${apiBaseUrl}/api/Poll`, function(polls){
                 polls.forEach(p => $("#pollSelect").append(`<option value="${p.id}">${p.title}</option>`));
             });

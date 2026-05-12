@@ -73,8 +73,6 @@
                     success: function (response) {
                         $("#alertBox").removeClass("d-none alert-danger").addClass("alert-success")
                                       .text("Anket basariyla olusturuldu! Soru eklemek ister misiniz?");
-
-                        // Anket olusturulduktan sonra soru ekleme sayfasina yonlendir
                         setTimeout(() => {
                             window.location.href = `/Admin/AddQuestion/${response.pollId}`;
                         }, 1500);

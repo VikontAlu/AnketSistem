@@ -29,7 +29,7 @@ namespace AnketSistemi.API.DTOs
 
     public class QuestionAnswerDto
     {
-        // BUG FIX #4: Alan adlari MVC tarafiyla eslesiyor
+     
         public int QuestionId { get; set; }
         public string? TextAnswer { get; set; }
         public int? SelectedOptionId { get; set; }

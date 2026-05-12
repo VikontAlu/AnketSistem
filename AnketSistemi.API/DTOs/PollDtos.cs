@@ -17,7 +17,7 @@ namespace AnketSistemi.API.DTOs
         public string Title { get; set; } = string.Empty;
         public string? Detail { get; set; }
         public DateTime CreatedAt { get; set; }
-        public DateTime ExpireDate { get; set; }   // ⬅️ Eksik olan alan eklendi
+        public DateTime ExpireDate { get; set; }  
         public int QuestionCount { get; set; }
     }
 }

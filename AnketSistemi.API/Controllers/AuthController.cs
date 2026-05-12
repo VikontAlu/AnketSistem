@@ -55,7 +55,7 @@ namespace AnketSistemi.API.Controllers
                 var roles = await _userManager.GetRolesAsync(user);
                 var isAdmin = roles.Contains("Admin");
 
-                // BUG FIX: role bilgisini de donuyoruz ki MVC tarafinda dogru yonlendirme yapabilelim
+             
                 return Ok(new { token = token, isAdmin = isAdmin, message = "Giris basarili" });
             }
 
@@ -90,7 +90,7 @@ namespace AnketSistemi.API.Controllers
             IdentityResult? passwordResult = null;
             if (!string.IsNullOrEmpty(dto.NewPassword))
             {
-                // Mevcut şifreyi doğrula
+
                 var check = await _userManager.CheckPasswordAsync(user, dto.CurrentPassword);
                 if (!check) return BadRequest(new { message = "Mevcut şifre yanlış." });
                 passwordResult = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
@@ -106,6 +106,30 @@ namespace AnketSistemi.API.Controllers
             }
 
             return Ok(new { message = "Profil güncellendi." });
+        }
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+                return Ok(new { token = "", message = "Eğer bu e-posta kayıtlıysa token oluşturuldu." });
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            return Ok(new { token = token, email = user.Email, message = "Token oluşturuldu." });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null) return BadRequest(new { message = "Kullanıcı bulunamadı." });
+
+            var result = await _userManager.ResetPasswordAsync(user, dto.Token, dto.NewPassword);
+            if (result.Succeeded)
+                return Ok(new { message = "Şifre başarıyla sıfırlandı." });
+
+            return BadRequest(result.Errors);
         }
     }
 }

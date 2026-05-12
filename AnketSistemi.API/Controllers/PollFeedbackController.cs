@@ -35,7 +35,7 @@ namespace AnketSistemi.API.Controllers
             return Ok(new { message = "Degerlendirmeniz basariyla kaydedildi!" });
         }
         [HttpGet]
-        [Authorize(Roles = "Admin")] // Sadece admin görebilir
+        [Authorize(Roles = "Admin")] 
         public async Task<IActionResult> GetFeedbacks([FromQuery] int? pollId)
         {
             var query = _context.PollFeedbacks.AsQueryable();

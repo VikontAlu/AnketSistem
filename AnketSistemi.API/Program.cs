@@ -10,7 +10,7 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- CORS (BUG FIX #2: MVC'den gelen isteklere izin veriyoruz) ---
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowMVC", policy =>
@@ -24,11 +24,11 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod());
 });
 
-// --- DbContext ---
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// --- Identity ---
+
 builder.Services.AddIdentity<AppUser, AppRole>(options =>
 {
     options.Password.RequireDigit = true;
@@ -39,7 +39,7 @@ builder.Services.AddIdentity<AppUser, AppRole>(options =>
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
 
-// --- JWT Authentication ---
+
 var jwtKey = builder.Configuration["Jwt:Key"]!;
 builder.Services.AddAuthentication(options =>
 {
@@ -60,10 +60,9 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// --- Generic Repository ---
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
-// --- Security Service ---
+
 builder.Services.AddScoped<ISecurityService, SecurityService>();
 
 builder.Services.AddControllers();
@@ -78,9 +77,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-
-
-// BUG FIX #2: CORS middleware - UseAuthentication'dan ÖNCE olmali
 app.UseCors("AllowMVC");
 
 app.UseAuthentication();
@@ -88,8 +84,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// --- OTOMATİK VERİ EKLEME (SEEDING) İŞLEMİ BAŞLANGICI ---
-// --- OTOMATİK VERİ EKLEME (SEEDING) İŞLEMİ BAŞLANGICI ---
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -98,22 +92,22 @@ using (var scope = app.Services.CreateScope())
         var userManager = services.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<AnketSistemi.API.Models.AppUser>>();
         var roleManager = services.GetRequiredService<Microsoft.AspNetCore.Identity.RoleManager<AnketSistemi.API.Models.AppRole>>();
 
-        // 1. Rolleri Kontrol Et ve Yoksa Oluştur
+ 
         if (!await roleManager.RoleExistsAsync("Admin"))
             await roleManager.CreateAsync(new AnketSistemi.API.Models.AppRole { Name = "Admin" });
 
         if (!await roleManager.RoleExistsAsync("User"))
             await roleManager.CreateAsync(new AnketSistemi.API.Models.AppRole { Name = "User" });
 
-        // 2. Otomatik Admin Hesabı Oluştur
+
         string adminEmail = "sistem@anketsistemi.com";
-        string adminPass = "Anket123*"; // Identity varsayılan olarak büyük/küçük harf, rakam ve özel karakter ister
+        string adminPass = "Anket123*"; 
 
         if (await userManager.FindByEmailAsync(adminEmail) == null)
         {
             var adminUser = new AnketSistemi.API.Models.AppUser
             {   
-                UserName = adminEmail, // Giriş için e-posta kullanacağız
+                UserName = adminEmail, 
                 Email = adminEmail,
                 FullName = "Sistem Yöneticisi"
             };
@@ -121,7 +115,7 @@ using (var scope = app.Services.CreateScope())
             var result = await userManager.CreateAsync(adminUser, adminPass);
             if (result.Succeeded)
             {
-                // Hesaba Admin yetkisini ver
+  
                 await userManager.AddToRoleAsync(adminUser, "Admin");
             }
         }
@@ -131,8 +125,7 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine("Seeding Hatası: " + ex.Message);
     }
 }
-// --- OTOMATİK VERİ EKLEME BİTİŞİ ---
 
-app.Run(); // Bu satır zaten en altta vardı
-// --- OTOMATİK VERİ EKLEME BİTİŞİ ---
+
+app.Run(); 
 

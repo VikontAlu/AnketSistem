@@ -35,7 +35,7 @@ namespace AnketSistemi.API.Controllers
                     Title = p.Title,
                     Detail = p.Detail,
                     CreatedAt = p.CreatedAt,
-                    ExpireDate = p.ExpireDate,   // ⬅️ Eklendi
+                    ExpireDate = p.ExpireDate,   
                     QuestionCount = p.Questions!.Count
                 }).ToListAsync();
 
@@ -52,14 +52,14 @@ namespace AnketSistemi.API.Controllers
 
             if (poll == null) return NotFound(new { message = "Anket bulunamadi." });
 
-            // BUG FIX #5: MVC'nin bekledigine uygun sekilde camelCase field adlariyla donuyoruz
+
             var result = new
             {
                 id = poll.Id,
                 title = poll.Title,
                 detail = poll.Detail,
                 expireDate = poll.ExpireDate.ToString("yyyy-MM-ddTHH:mm:ss"),
-                isActive = poll.IsActive,   // ⬅️ Eklendi
+                isActive = poll.IsActive,  
                 questions = poll.Questions!.Select(q => new
                 {
                     id = q.Id,
@@ -192,7 +192,7 @@ namespace AnketSistemi.API.Controllers
 
             return Ok(new { pollTitle = poll.Title, statistics = results });
         }
-        // Soru güncelleme
+
         [Authorize(Roles = "Admin")]
         [HttpPut("Question/{id}")]
         public async Task<IActionResult> UpdateQuestion(int id, PollQuestionDto model, [FromServices] IGenericRepository<PollQuestion> questionRepo)
@@ -208,7 +208,6 @@ namespace AnketSistemi.API.Controllers
             return Ok(new { status = true, message = "Soru güncellendi." });
         }
 
-        // Seçenek güncelleme
         [Authorize(Roles = "Admin")]
         [HttpPut("Choice/{id}")]
         public async Task<IActionResult> UpdateChoice(int id, QuestionChoiceDto model, [FromServices] IGenericRepository<QuestionChoice> choiceRepo)
@@ -223,7 +222,7 @@ namespace AnketSistemi.API.Controllers
             return Ok(new { status = true, message = "Seçenek güncellendi." });
         }
 
-        // Soru silme (pasif yap)
+
         [Authorize(Roles = "Admin")]
         [HttpDelete("Question/{id}")]
         public async Task<IActionResult> DeleteQuestion(int id, [FromServices] IGenericRepository<PollQuestion> questionRepo)
@@ -236,7 +235,7 @@ namespace AnketSistemi.API.Controllers
             return Ok(new { status = true, message = "Soru pasif yapıldı." });
         }
 
-        // Seçenek silme (pasif yap)
+
         [Authorize(Roles = "Admin")]
         [HttpDelete("Choice/{id}")]
         public async Task<IActionResult> DeleteChoice(int id, [FromServices] IGenericRepository<QuestionChoice> choiceRepo)

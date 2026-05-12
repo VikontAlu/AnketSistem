@@ -58,7 +58,6 @@
         const apiBaseUrl = "@apiBaseUrl";
 
         $(function(){
-            // Anket bilgilerini yükle
             $.get(`${apiBaseUrl}/api/Poll/${pollId}`, function(poll){
                 $("#title").val(poll.title);
                 $("#detail").val(poll.detail);

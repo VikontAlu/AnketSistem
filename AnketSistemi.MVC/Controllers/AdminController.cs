@@ -24,7 +24,7 @@ namespace AnketSistemi.MVC.Controllers
             return View();
         }
 
-        // AddQuestion sayfasına questionId parametresi ekliyoruz (null ise yeni soru, dolu ise düzenleme)
+
         [HttpGet("Admin/AddQuestion/{pollId}")]
         public IActionResult AddQuestion(int pollId, int? questionId = null)
         {
@@ -60,13 +60,23 @@ namespace AnketSistemi.MVC.Controllers
             ViewBag.ApiBaseUrl = _config["ApiBaseUrl"];
             return View();
         }
-        [HttpGet("Admin/Results/{id}")]
-        public IActionResult Results(int id)
+        [HttpGet("Admin/Results/{id?}")]  
+        public IActionResult Results(int? id)
         {
-            ViewBag.PollId = id;
             ViewBag.ApiBaseUrl = _config["ApiBaseUrl"];
-            return View();
+            if (id.HasValue)
+            {
+              
+                ViewBag.PollId = id.Value;
+                return View("Results");
+            }
+            else
+            {
+              
+                return View("SelectPollForResults");
+            }
         }
+
 
 
     }

@@ -2,7 +2,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
-// BUG FIX #7: API base URL'yi config'den okuyoruz
 builder.Services.AddHttpClient();
 
 var app = builder.Build();
