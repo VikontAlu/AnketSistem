@@ -1,6 +1,9 @@
-﻿public class UpdateProfileDto
+﻿namespace AnketSistemi.API.DTOs
 {
-    public string? FullName { get; set; }
-    public string? CurrentPassword { get; set; }
-    public string? NewPassword { get; set; }
+    public class UpdateProfileDto
+    {
+        public string? FullName { get; set; }
+        public string? CurrentPassword { get; set; }
+        public string? NewPassword { get; set; }
+    }
 }

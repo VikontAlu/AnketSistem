@@ -1,0 +1,80 @@
+﻿@{
+    ViewData["Title"] = "Anket Sonuçları";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var apiBaseUrl = ViewBag.ApiBaseUrl as string ?? "http://localhost:5229";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold"><i class="bi bi-bar-chart-fill text-info me-2"></i>Anket Sonuçları</h2>
+    <a href="/Admin/Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Panele Dön</a>
+</div>
+
+<div id="loading" class="text-center my-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="mt-2">Sonuçlar yükleniyor...</p>
+</div>
+
+<div id="resultsContainer" class="d-none">
+    <h3 id="pollTitle" class="mb-4 text-center fw-bold"></h3>
+    <div id="chartsArea"></div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        const pollId = @ViewBag.PollId;
+        const apiBaseUrl = "@apiBaseUrl";
+
+        $(function(){
+            $.ajax({
+                url: `${apiBaseUrl}/api/Poll/${pollId}/Results`,
+                headers: { "Authorization": "Bearer " + localStorage.getItem("token") },
+                success: function(data){
+                    $("#loading").hide();
+                    $("#pollTitle").text(data.pollTitle);
+                    let html = "";
+                    data.statistics.forEach((stat, index) => {
+                        const labels = stat.choices.map(c => c.text);
+                        const votes = stat.choices.map(c => c.voteCount);
+                        const canvasId = `chart_${index}`;
+                        html += `
+                            <div class="card mb-4 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">${stat.question}</h5>
+                                    <small class="text-muted">Toplam Oy: ${stat.totalVotes}</small>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="${canvasId}" height="250"></canvas>
+                                </div>
+                            </div>
+                        `;
+                        setTimeout(() => {
+                            new Chart(document.getElementById(canvasId), {
+                                type: 'bar',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: 'Oy Sayısı',
+                                        data: votes,
+                                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                                        borderColor: 'rgba(54, 162, 235, 1)',
+                                        borderWidth: 1
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                                }
+                            });
+                        }, 100);
+                    });
+                    $("#chartsArea").html(html);
+                    $("#resultsContainer").removeClass("d-none");
+                },
+                error: function(){
+                    $("#loading").html("<div class='alert alert-danger'>Sonuçlar alınamadı.</div>");
+                }
+            });
+        });
+    </script>
+}

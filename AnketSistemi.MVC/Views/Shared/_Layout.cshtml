@@ -51,6 +51,13 @@
                     <li class="nav-item"><a class="btn btn-primary btn-sm mt-1 ms-2" href="/Auth/Register">Kayit Ol</a></li>
                 `;
             }
+                    if (token) {
+            menuHtml = `
+                <li class="nav-item"><a class="nav-link" href="/Auth/Profile">Profilim</a></li>
+                <li class="nav-item">${isAdmin ? '<a class="nav-link text-warning fw-bold" href="/Admin/Index">Admin Panel</a>' : ''}</li>
+                <li class="nav-item"><button class="btn btn-outline-danger btn-sm mt-1 ms-2" onclick="logout()">Cikis Yap</button></li>
+            `;
+        }
             $("#authMenu").html(menuHtml);
         });
 

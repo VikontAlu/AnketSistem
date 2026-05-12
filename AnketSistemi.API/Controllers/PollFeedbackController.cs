@@ -2,6 +2,7 @@
 using AnketSistemi.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace AnketSistemi.API.Controllers
@@ -32,6 +33,32 @@ namespace AnketSistemi.API.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Degerlendirmeniz basariyla kaydedildi!" });
+        }
+        [HttpGet]
+        [Authorize(Roles = "Admin")] // Sadece admin görebilir
+        public async Task<IActionResult> GetFeedbacks([FromQuery] int? pollId)
+        {
+            var query = _context.PollFeedbacks.AsQueryable();
+
+            if (pollId.HasValue)
+                query = query.Where(f => f.PollId == pollId.Value);
+
+            var feedbacks = await query
+                .Include(f => f.Poll)
+                .Include(f => f.User)
+                .OrderByDescending(f => f.CreatedAt)
+                .Select(f => new
+                {
+                    id = f.Id,
+                    pollTitle = f.Poll.Title,
+                    userEmail = f.User.Email,
+                    score = f.Score,
+                    comment = f.UserComment,
+                    createdAt = f.CreatedAt
+                })
+                .ToListAsync();
+
+            return Ok(feedbacks);
         }
     }
 }

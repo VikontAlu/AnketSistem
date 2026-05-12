@@ -35,6 +35,7 @@ namespace AnketSistemi.API.Controllers
                     Title = p.Title,
                     Detail = p.Detail,
                     CreatedAt = p.CreatedAt,
+                    ExpireDate = p.ExpireDate,   // ⬅️ Eklendi
                     QuestionCount = p.Questions!.Count
                 }).ToListAsync();
 
@@ -57,7 +58,8 @@ namespace AnketSistemi.API.Controllers
                 id = poll.Id,
                 title = poll.Title,
                 detail = poll.Detail,
-                expireDate = poll.ExpireDate,
+                expireDate = poll.ExpireDate.ToString("yyyy-MM-ddTHH:mm:ss"),
+                isActive = poll.IsActive,   // ⬅️ Eklendi
                 questions = poll.Questions!.Select(q => new
                 {
                     id = q.Id,

@@ -7,7 +7,6 @@ namespace AnketSistemi.API.DTOs
         [Required(ErrorMessage = "Anket basligi zorunludur.")]
         public string Title { get; set; } = string.Empty;
         public string? Detail { get; set; }
-
         [Required]
         public DateTime ExpireDate { get; set; }
     }
@@ -18,6 +17,7 @@ namespace AnketSistemi.API.DTOs
         public string Title { get; set; } = string.Empty;
         public string? Detail { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime ExpireDate { get; set; }   // ⬅️ Eksik olan alan eklendi
         public int QuestionCount { get; set; }
     }
 }

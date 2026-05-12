@@ -1,0 +1,66 @@
+﻿@{
+    ViewData["Title"] = "Kullanıcı Yorumları";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var apiBaseUrl = ViewBag.ApiBaseUrl as string ?? "http://localhost:5229";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold"><i class="bi bi-star-fill text-warning me-2"></i>Kullanıcı Değerlendirmeleri</h2>
+    <a href="/Admin/Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Panele Dön</a>
+</div>
+
+<div class="card shadow">
+    <div class="card-body">
+        <table class="table table-hover" id="feedbacksTable">
+            <thead>
+                <tr>
+                    <th>Anket</th>
+                    <th>Kullanıcı</th>
+                    <th>Puan</th>
+                    <th>Yorum</th>
+                    <th>Tarih</th>
+                </tr>
+            </thead>
+            <tbody id="feedbacksBody">
+                <tr><td colspan="5" class="text-center text-muted">Yükleniyor...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const apiBaseUrl = "@apiBaseUrl";
+        $(function(){
+            $.ajax({
+                url: `${apiBaseUrl}/api/PollFeedback`,
+                headers: { "Authorization": "Bearer " + localStorage.getItem("token") },
+                success: function(data){
+                    let rows = "";
+                    if (data.length === 0) {
+                        rows = `<tr><td colspan="5" class="text-center text-muted">Henüz hiç değerlendirme yapılmamış.</td></tr>`;
+                    } else {
+                        data.forEach(f => {
+                            rows += `<tr>
+                                <td>${f.pollTitle}</td>
+                                <td>${f.userEmail}</td>
+                                <td>
+                                    <span class="text-warning me-2">
+                                        ${"★".repeat(f.score)}${"☆".repeat(5 - f.score)}
+                                    </span>
+                                    <span>${f.score}/5</span>
+                                </td>
+                                <td>${f.comment || '-'}</td>
+                                <td>${new Date(f.createdAt).toLocaleDateString('tr-TR')}</td>
+                            </tr>`;
+                        });
+                    }
+                    $("#feedbacksBody").html(rows);
+                },
+                error: function(){
+                    $("#feedbacksBody").html('<tr><td colspan="5" class="text-center text-danger">Veri çekilemedi.</td></tr>');
+                }
+            });
+        });
+    </script>
+}   

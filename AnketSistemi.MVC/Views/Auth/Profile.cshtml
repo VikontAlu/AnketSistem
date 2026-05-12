@@ -1,0 +1,81 @@
+﻿@{
+    ViewData["Title"] = "Profilim";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var apiBaseUrl = ViewBag.ApiBaseUrl as string ?? "http://localhost:5229";
+}
+
+<div class="container" style="max-width:600px;">
+    <h2 class="mb-4"><i class="bi bi-person-circle text-primary me-2"></i>Profil Bilgileri</h2>
+    <div class="card shadow">
+        <div class="card-body">
+            <div id="alertBox" class="alert d-none"></div>
+            <form id="profileForm">
+                <div class="mb-3">
+                    <label class="fw-bold">Ad Soyad</label>
+                    <input type="text" id="fullName" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">E-posta</label>
+                    <input type="text" id="email" class="form-control" disabled>
+                </div>
+                <hr>
+                <h5>Şifre Değiştir</h5>
+                <div class="mb-3">
+                    <label>Mevcut Şifre</label>
+                    <input type="password" id="currentPassword" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Yeni Şifre</label>
+                    <input type="password" id="newPassword" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-primary">Güncelle</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const apiBaseUrl = "@apiBaseUrl";
+        $(function(){
+            $.ajax({
+                url: `${apiBaseUrl}/api/Auth/profile`,
+                headers: { "Authorization": "Bearer " + localStorage.getItem("token") },
+                success: function(data){
+                    $("#fullName").val(data.fullName);
+                    $("#email").val(data.email);
+                }
+            });
+
+            $("#profileForm").submit(function(e){
+                e.preventDefault();
+                const payload = {
+                    fullName: $("#fullName").val(),
+                    currentPassword: $("#currentPassword").val() || null,
+                    newPassword: $("#newPassword").val() || null
+                };
+
+                $.ajax({
+                    url: `${apiBaseUrl}/api/Auth/profile`,
+                    type: "PUT",
+                    contentType: "application/json",
+                    headers: { "Authorization": "Bearer " + localStorage.getItem("token") },
+                    data: JSON.stringify(payload),
+                    success: function(){
+                        $("#alertBox").removeClass("d-none alert-danger").addClass("alert-success")
+                                      .text("Profil başarıyla güncellendi.");
+                        $("#currentPassword, #newPassword").val("");
+                    },
+                    error: function(err){
+                        let msg = "Güncelleme başarısız.";
+                        if (err.responseJSON) {
+                            if (err.responseJSON.message) msg = err.responseJSON.message;
+                            else if (Array.isArray(err.responseJSON)) msg = err.responseJSON.map(e=>e.description).join(" ");
+                        }
+                        $("#alertBox").removeClass("d-none alert-success").addClass("alert-danger").text(msg);
+                    }
+                });
+            });
+        });
+    </script>
+}
