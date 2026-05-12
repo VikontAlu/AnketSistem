@@ -2,14 +2,23 @@
 {
     public class Poll : AppBaseEntity
     {
-        public string Title { get; set; } = string.Empty;
-        public string? Detail { get; set; }
-        public DateTime ExpireDate { get; set; } // Bitiş tarihi
+        public string Title { get; set; }
 
-        // Anketi oluşturan kullanıcı
-        public string AppUserId { get; set; } = string.Empty;
-        public AppUser? AppUser { get; set; }
+        // Description yerine Controller'ın beklediği Detail ismini kullanıyoruz
+        public string Detail { get; set; }
 
-        public ICollection<PollQuestion>? Questions { get; set; }
+        // CreatorId yerine Controller'ın beklediği AppUserId ismini kullanıyoruz
+        public string AppUserId { get; set; }
+        public AppUser AppUser { get; set; }
+
+        // Controller'ın aradığı ama bizim eklemeyi unuttuğumuz Bitiş Tarihi alanı
+        public DateTime ExpireDate { get; set; }
+
+        // Bize özgü eklediğimiz çaktırmadan duran özellikler
+        public bool IsActive { get; set; } = true;
+        public int TotalViews { get; set; } = 0;
+
+        public ICollection<PollQuestion> Questions { get; set; }
+        public ICollection<PollFeedback> Feedbacks { get; set; }
     }
 }

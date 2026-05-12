@@ -1,6 +1,6 @@
-﻿using AnketSistemi.API.Models;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using AnketSistemi.API.Models;
 
 namespace AnketSistemi.API.Data
 {
@@ -13,22 +13,31 @@ namespace AnketSistemi.API.Data
         public DbSet<QuestionChoice> QuestionChoices { get; set; }
         public DbSet<UserResponse> UserResponses { get; set; }
 
+        public DbSet<PollFeedback> PollFeedbacks { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
 
-  
-            builder.Entity<UserResponse>()
-                .HasOne(ur => ur.Poll)
+            // 1. Feedback tablosu için silme kısıtlaması
+            builder.Entity<PollFeedback>()
+                .HasOne(f => f.User)
                 .WithMany()
-                .HasForeignKey(ur => ur.PollId)
-                .OnDelete(DeleteBehavior.NoAction);
+                .HasForeignKey(f => f.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
+            // 2. İŞTE HATAYI ÇÖZEN KISIM: UserResponses Tablosu için çoklu silme çakışmasını engelliyoruz
             builder.Entity<UserResponse>()
                 .HasOne(ur => ur.PollQuestion)
                 .WithMany()
                 .HasForeignKey(ur => ur.PollQuestionId)
-                .OnDelete(DeleteBehavior.NoAction);
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<UserResponse>()
+                .HasOne(ur => ur.AppUser)
+                .WithMany()
+                .HasForeignKey(ur => ur.AppUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

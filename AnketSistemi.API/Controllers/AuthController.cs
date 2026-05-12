@@ -1,7 +1,6 @@
 ﻿using AnketSistemi.API.DTOs;
 using AnketSistemi.API.Models;
 using AnketSistemi.API.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,67 +19,42 @@ namespace AnketSistemi.API.Controllers
             _securityService = securityService;
         }
 
-        [HttpPost("SignUp")]
-        public async Task<IActionResult> SignUp(UserSignUpDto model)
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
         {
-            var user = new AppUser { UserName = model.UserName, Email = model.Email, FullName = model.FullName };
-            var result = await _userManager.CreateAsync(user, model.Password);
+            await _securityService.SeedRolesAsync(); // İlk kayıtta rolleri oluşturmayı garantiye alalım
+
+            var user = new AppUser
+            {
+                UserName = dto.Email,
+                Email = dto.Email,
+                FullName = dto.FullName
+            };
+
+            var result = await _userManager.CreateAsync(user, dto.Password);
 
             if (result.Succeeded)
             {
+                // İlk kayıt olanı User yapalım, adminliği biz veritabanından elle veya ayrı metotla veririz.
                 await _userManager.AddToRoleAsync(user, "User");
-                return Ok(new { status = true, message = "Kayıt başarılı. Giriş yapabilirsiniz." });
+                return Ok(new { message = "Kayıt başarılı!" });
             }
-            return BadRequest(new { status = false, errors = result.Errors });
+
+            return BadRequest(result.Errors);
         }
 
-        [HttpPost("SignIn")]
-        public async Task<IActionResult> SignIn(UserSignInDto model)
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
         {
-            var user = await _userManager.FindByNameAsync(model.UserName);
-            if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+
+            if (user != null && await _userManager.CheckPasswordAsync(user, dto.Password))
             {
-                var roles = await _userManager.GetRolesAsync(user);
-                var token = _securityService.CreateJwtToken(user, roles);
-                return Ok(new { status = true, token = token });
-            }
-            return Unauthorized(new { status = false, message = "Kullanıcı adı veya şifre hatalı." });
-        }
-
-        [Authorize(Roles = "Admin")]
-        [HttpPost("MakeAdmin")]
-        public async Task<IActionResult> MakeAdmin(string userName)
-        {
-            var user = await _userManager.FindByNameAsync(userName);
-            if (user == null)
-                return NotFound(new { status = false, message = "Kullanıcı bulunamadı." });
-
-            await _userManager.AddToRoleAsync(user, "Admin");
-
-            return Ok(new { status = true, message = $"{userName} artık bir yönetici!" });
-        }
-
-        [Authorize(Roles = "Admin")]
-        [HttpPost("RevokeAdmin")]
-        public async Task<IActionResult> RevokeAdmin(string userName)
-        {
-            var user = await _userManager.FindByNameAsync(userName);
-            if (user == null)
-                return NotFound(new { status = false, message = "Kullanıcı bulunamadı." });
-
-            var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
-            if (!isAdmin)
-                return BadRequest(new { status = false, message = "Bu kullanıcı zaten yönetici değil." });
-
-
-            var result = await _userManager.RemoveFromRoleAsync(user, "Admin");
-
-            if (result.Succeeded)
-            {
-                return Ok(new { status = true, message = $"{userName} adlı kullanıcının yönetici yetkisi başarıyla alındı!" });
+                var token = await _securityService.GenerateJwtTokenAsync(user);
+                return Ok(new { token = token, message = "Giriş başarılı" });
             }
 
-            return BadRequest(new { status = false, message = "Yetki alınırken bir sorun oluştu." });
+            return Unauthorized(new { message = "E-posta veya şifre hatalı!" });
         }
     }
 }
