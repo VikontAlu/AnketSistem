@@ -1,12 +1,13 @@
 ﻿@{
-    ViewData["Title"] = "Ankete Soru Ekle";
+    ViewData["Title"] = (ViewBag.QuestionId != null ? "Soruyu Düzenle" : "Ankete Soru Ekle");
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     var apiBaseUrl = ViewBag.ApiBaseUrl as string ?? "http://localhost:5229";
+    var questionId = ViewBag.QuestionId as int?;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold text-dark"><i class="bi bi-question-square text-success me-2"></i>Soru Ekle</h2>
-    <a href="/Admin/Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Panele Don</a>
+    <h2 class="fw-bold"><i class="bi bi-question-square text-success me-2"></i>@ViewData["Title"]</h2>
+    <a href="/Admin/EditPoll/@ViewBag.PollId" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Ankete Dön</a>
 </div>
 
 <div class="row">
@@ -16,36 +17,27 @@
                 <div id="alertBox" class="alert d-none"></div>
 
                 <form id="addQuestionForm">
+                    <input type="hidden" id="questionId" value="@questionId">
                     <div class="mb-4">
                         <label class="form-label fw-bold">Soru Metni</label>
-                        <input type="text" id="questionText" class="form-control form-control-lg" placeholder="Orn: En sevdiginiz programlama dili hangisidir?" required>
+                        <input type="text" id="questionText" class="form-control form-control-lg" required>
                     </div>
 
                     <div class="mb-3 d-flex justify-content-between align-items-center">
-                        <label class="form-label fw-bold mb-0">Secenekler (Siklar)</label>
+                        <label class="form-label fw-bold mb-0">Seçenekler (Şıklar)</label>
                         <button type="button" class="btn btn-sm btn-outline-primary" id="addChoiceBtn">
-                            <i class="bi bi-plus"></i> Yeni Secenek Ekle
+                            <i class="bi bi-plus"></i> Yeni Seçenek Ekle
                         </button>
                     </div>
 
                     <div id="choicesContainer">
-                        <div class="input-group mb-2 choice-row">
-                            <span class="input-group-text bg-light">A</span>
-                            <input type="text" class="form-control choice-input" placeholder="Secenek 1" required>
-                            <button type="button" class="btn btn-danger remove-choice" disabled><i class="bi bi-trash"></i></button>
-                        </div>
-                        <div class="input-group mb-2 choice-row">
-                            <span class="input-group-text bg-light">B</span>
-                            <input type="text" class="form-control choice-input" placeholder="Secenek 2" required>
-                            <button type="button" class="btn btn-danger remove-choice"><i class="bi bi-trash"></i></button>
-                        </div>
+                        <!-- JavaScript ile dolacak -->
                     </div>
 
                     <hr class="my-4">
-
                     <div class="text-end">
                         <button type="submit" class="btn btn-success btn-lg fw-bold px-5">
-                            <i class="bi bi-check2-circle"></i> Soruyu Ankete Kaydet
+                            <i class="bi bi-check2-circle"></i> @((questionId != null) ? "Güncelle" : "Kaydet")
                         </button>
                     </div>
                 </form>
@@ -57,98 +49,148 @@
 @section Scripts {
     <script>
         const currentPollId = @ViewBag.PollId;
+        const questionId = @(questionId ?? 0);
         const apiBaseUrl = "@apiBaseUrl";
-
         const letters = ["A","B","C","D","E","F","G","H"];
+        let currentChoices = []; // düzenleme modunda mevcut seçenekleri tutar
 
-        $(document).ready(function () {
+        $(function(){
+            if (questionId > 0) {
+                // Düzenleme modu: soruyu ve seçenekleri yükle
+                $.get(`${apiBaseUrl}/api/Poll/${currentPollId}`, function(poll){
+                    const question = poll.questions.find(q => q.id == questionId);
+                    if (!question) return;
+                    $("#questionText").val(question.questionText);
+                    currentChoices = question.choices;
+                    renderChoices();
+                });
+            } else {
+                // Yeni soru modu: boş iki seçenek
+                currentChoices = [{ choiceText: "", orderIndex: 0 }, { choiceText: "", orderIndex: 1 }];
+                renderChoices();
+            }
 
-            $("#addChoiceBtn").click(function() {
-                let choiceCount = $(".choice-row").length;
-                let letter = letters[choiceCount] || (choiceCount + 1);
-                let newRow = `
-                    <div class="input-group mb-2 choice-row">
-                        <span class="input-group-text bg-light">${letter}</span>
-                        <input type="text" class="form-control choice-input" placeholder="Secenek ${choiceCount + 1}" required>
-                        <button type="button" class="btn btn-danger remove-choice"><i class="bi bi-trash"></i></button>
-                    </div>
-                `;
-                $("#choicesContainer").append(newRow);
+            function renderChoices() {
+                let html = "";
+                currentChoices.forEach((c, i) => {
+                    html += `<div class="input-group mb-2 choice-row" data-index="${i}">
+                        <span class="input-group-text bg-light">${letters[i] || i+1}</span>
+                        <input type="text" class="form-control choice-input" value="${c.choiceText || ''}" placeholder="Seçenek ${i+1}" required>
+                        <button type="button" class="btn btn-danger remove-choice" ${currentChoices.length <= 2 ? 'disabled' : ''}><i class="bi bi-trash"></i></button>
+                    </div>`;
+                });
+                $("#choicesContainer").html(html);
+            }
+
+            // Seçenek ekleme
+            $("#addChoiceBtn").click(function(){
+                currentChoices.push({ choiceText: "", orderIndex: currentChoices.length });
+                renderChoices();
             });
 
-            $(document).on("click", ".remove-choice", function() {
-                if ($(".choice-row").length > 2) {
-                    $(this).closest(".choice-row").remove();
-                } else {
-                    alert("Bir sorunun en az 2 secenegi olmalidir!");
-                }
+            // Seçenek silme
+            $(document).on("click", ".remove-choice", function(){
+                if (currentChoices.length <= 2) return;
+                const index = $(this).closest(".choice-row").data("index");
+                currentChoices.splice(index, 1);
+                renderChoices();
             });
 
-            $("#addQuestionForm").submit(function (e) {
+            // Form gönderimi
+            $("#addQuestionForm").submit(function(e){
                 e.preventDefault();
-
                 const token = localStorage.getItem("token");
-                if (!token) {
-                    window.location.href = "/Auth/Login";
-                    return;
-                }
+                if (!token) { window.location.href = "/Auth/Login"; return; }
 
-                // Once soruyu ekle, sonra secenekleri ekle
+                // Seçenekleri güncelle
+                $(".choice-input").each(function(i){
+                    if (i < currentChoices.length) {
+                        currentChoices[i].choiceText = $(this).val().trim();
+                    }
+                });
+
+                if (questionId > 0) {
+                    // Güncelleme: sadece soru metni ve seçenekler (seçenekleri ayrı ayrı PUT ile güncelle)
+                    updateQuestion(token);
+                } else {
+                    // Yeni soru ekleme
+                    createQuestion(token);
+                }
+            });
+
+            function createQuestion(token) {
                 const questionData = {
                     pollId: currentPollId,
                     questionText: $("#questionText").val(),
-                    format: 2, // SingleChoice
+                    format: 2,
                     isMandatory: true
                 };
-
                 $.ajax({
                     url: `${apiBaseUrl}/api/Poll/AddQuestion`,
                     type: "POST",
                     contentType: "application/json",
                     headers: { "Authorization": "Bearer " + token },
                     data: JSON.stringify(questionData),
-                    success: function (qResponse) {
-                        const questionId = qResponse.questionId;
+                    success: function(res){
+                        const qId = res.questionId;
+                        // Seçenekleri ekle
+                        let promises = currentChoices.map((c, i) => {
+                            return $.ajax({
+                                url: `${apiBaseUrl}/api/Poll/AddChoice`,
+                                type: "POST",
+                                contentType: "application/json",
+                                headers: { "Authorization": "Bearer " + token },
+                                data: JSON.stringify({ pollQuestionId: qId, choiceText: c.choiceText, orderIndex: i })
+                            });
+                        });
+                        Promise.all(promises).then(() => {
+                            $("#alertBox").removeClass("d-none alert-danger").addClass("alert-success").text("Soru eklendi.");
+                            setTimeout(() => window.location.href = `/Admin/EditPoll/${currentPollId}`, 1500);
+                        });
+                    },
+                    error: function(){ alert("Hata"); }
+                });
+            }
 
-                        // Secenekleri sirayla ekle
-                        let choicePromises = [];
-                        let orderIndex = 0;
-                        $(".choice-input").each(function() {
-                            let val = $(this).val().trim();
-                            if (val) {
-                                choicePromises.push($.ajax({
+            function updateQuestion(token) {
+                // Soru metnini güncelle
+                $.ajax({
+                    url: `${apiBaseUrl}/api/Poll/Question/${questionId}`,
+                    type: "PUT",
+                    contentType: "application/json",
+                    headers: { "Authorization": "Bearer " + token },
+                    data: JSON.stringify({ pollId: currentPollId, questionText: $("#questionText").val(), format: 2, isMandatory: true }),
+                    success: function(){
+                        // Mevcut seçenekleri güncelle/sil/ekle mantığı basit olsun: hepsini silip yeniden ekleyelim veya var olanları PUT ile güncelleyip yenilerini ekleyelim.
+                        // Basitlik için tüm seçenekleri silip yeniden ekleyelim.
+                        $.get(`${apiBaseUrl}/api/Poll/${currentPollId}`, function(poll){
+                            const question = poll.questions.find(q => q.id == questionId);
+                            if (!question) return;
+                            // Mevcut seçenekleri pasif yap (sil)
+                            let deletePromises = question.choices.map(c => $.ajax({
+                                url: `${apiBaseUrl}/api/Poll/Choice/${c.id}`,
+                                type: "DELETE",
+                                headers: { "Authorization": "Bearer " + token }
+                            }));
+                            Promise.all(deletePromises).then(() => {
+                                // Yeni seçenekleri ekle
+                                let addPromises = currentChoices.map((c, i) => $.ajax({
                                     url: `${apiBaseUrl}/api/Poll/AddChoice`,
                                     type: "POST",
                                     contentType: "application/json",
                                     headers: { "Authorization": "Bearer " + token },
-                                    data: JSON.stringify({
-                                        pollQuestionId: questionId,
-                                        choiceText: val,
-                                        orderIndex: orderIndex++
-                                    })
+                                    data: JSON.stringify({ pollQuestionId: questionId, choiceText: c.choiceText, orderIndex: i })
                                 }));
-                            }
-                        });
-
-                        $.when.apply($, choicePromises).done(function() {
-                            $("#alertBox").removeClass("d-none alert-danger").addClass("alert-success")
-                                          .text("Soru ve secenekler basariyla eklendi!");
-
-                            $("#addQuestionForm")[0].reset();
-                            $("#choicesContainer .choice-row:gt(1)").remove();
-
-                            setTimeout(() => { $("#alertBox").addClass("d-none"); }, 3000);
-                        }).fail(function() {
-                            $("#alertBox").removeClass("d-none alert-success").addClass("alert-danger")
-                                          .text("Soru eklendi fakat bazi secenekler eklenemedi.");
+                                Promise.all(addPromises).then(() => {
+                                    $("#alertBox").removeClass("d-none alert-danger").addClass("alert-success").text("Güncellendi.");
+                                    setTimeout(() => window.location.href = `/Admin/EditPoll/${currentPollId}`, 1500);
+                                });
+                            });
                         });
                     },
-                    error: function (err) {
-                        $("#alertBox").removeClass("d-none alert-success").addClass("alert-danger")
-                                      .text("Hata: Soru eklenemedi.");
-                    }
+                    error: function(){ alert("Güncelleme hatası"); }
                 });
-            });
+            }
         });
     </script>
 }

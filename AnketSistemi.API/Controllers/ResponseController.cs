@@ -57,5 +57,66 @@ namespace AnketSistemi.API.Controllers
             await _responseRepo.SaveAsync();
             return Ok(new { status = true, message = "Cevaplar kaydedildi." });
         }
+        [Authorize(Roles = "Admin")]
+        [HttpGet("ByPoll/{pollId}")]
+        public async Task<IActionResult> GetByPoll(int pollId)
+        {
+            var responses = await _responseRepo.AsQueryable()
+                .Where(r => r.PollId == pollId)
+                .Include(r => r.PollQuestion)
+                .Include(r => r.SelectedChoice)
+                .Include(r => r.AppUser)
+                .OrderBy(r => r.AppUser.Email)
+                .ToListAsync();
+
+            var result = responses.Select(r => new
+            {
+                id = r.Id,
+                userEmail = r.AppUser?.Email,
+                questionText = r.PollQuestion?.QuestionText,
+                answer = r.WrittenAnswer ?? r.SelectedChoice?.ChoiceText ?? "Cevap yok",
+                selectedChoiceId = r.SelectedChoiceId,
+                writtenAnswer = r.WrittenAnswer,
+                pollQuestionId = r.PollQuestionId
+            });
+
+            return Ok(result);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var response = await _responseRepo.AsQueryable()
+                .Include(r => r.PollQuestion)
+                .ThenInclude(q => q.Choices)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (response == null) return NotFound();
+            return Ok(new
+            {
+                id = response.Id,
+                pollQuestionId = response.PollQuestionId,
+                questionText = response.PollQuestion?.QuestionText,
+                choices = response.PollQuestion?.Choices?.Select(c => new { id = c.Id, text = c.ChoiceText }),
+                selectedChoiceId = response.SelectedChoiceId,
+                writtenAnswer = response.WrittenAnswer
+            });
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] QuestionAnswerDto updatedAnswer)
+        {
+            var response = await _responseRepo.GetByIdAsync(id);
+            if (response == null) return NotFound();
+
+            response.SelectedChoiceId = updatedAnswer.SelectedOptionId;
+            response.WrittenAnswer = updatedAnswer.TextAnswer;
+            _responseRepo.Update(response);
+            await _responseRepo.SaveAsync();
+
+            return Ok(new { status = true, message = "Cevap güncellendi." });
+        }
     }
 }

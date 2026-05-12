@@ -1,0 +1,84 @@
+﻿@{
+    ViewData["Title"] = "Cevapları Görüntüle";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var apiBaseUrl = ViewBag.ApiBaseUrl as string ?? "http://localhost:5229";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold"><i class="bi bi-eye text-info me-2"></i>Cevapları Görüntüle</h2>
+    <a href="/Admin/Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Panele Dön</a>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-4">
+                <select id="pollSelect" class="form-select">
+                    <option value="">-- Anket seçin --</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow">
+    <div class="card-body">
+        <table class="table" id="responsesTable" style="display:none;">
+            <thead>
+                <tr>
+                    <th>Kullanıcı</th>
+                    <th>Soru</th>
+                    <th>Cevap</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody id="responsesBody"></tbody>
+        </table>
+        <div id="noData" class="alert alert-info">Lütfen bir anket seçin.</div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const apiBaseUrl = "@apiBaseUrl";
+        $(function(){
+            // Anketleri yükle
+            $.get(`${apiBaseUrl}/api/Poll`, function(polls){
+                polls.forEach(p => $("#pollSelect").append(`<option value="${p.id}">${p.title}</option>`));
+            });
+
+            $("#pollSelect").change(function(){
+                const pollId = $(this).val();
+                if (!pollId) {
+                    $("#responsesTable").hide();
+                    $("#noData").show();
+                    return;
+                }
+
+                $.ajax({
+                    url: `${apiBaseUrl}/api/Response/ByPoll/${pollId}`,
+                    headers: { "Authorization": "Bearer " + localStorage.getItem("token") },
+                    success: function(data){
+                        let rows = "";
+                        data.forEach(r => {
+                            rows += `<tr>
+                                <td>${r.userEmail}</td>
+                                <td>${r.questionText}</td>
+                                <td>${r.answer}</td>
+                                <td>
+                                    <a href="/Admin/EditResponse/${r.id}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                </td>
+                            </tr>`;
+                        });
+                        $("#responsesBody").html(rows);
+                        $("#responsesTable").show();
+                        $("#noData").hide();
+                    },
+                    error: function(){
+                        alert("Cevaplar yüklenemedi.");
+                    }
+                });
+            });
+        });
+    </script>
+}

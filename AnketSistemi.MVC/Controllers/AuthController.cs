@@ -24,6 +24,12 @@ namespace AnketSistemi.MVC.Controllers
             ViewBag.ApiBaseUrl = _config["ApiBaseUrl"];
             return View();
         }
+        [HttpGet]
+        public IActionResult Profile()
+        {
+            ViewBag.ApiBaseUrl = _config["ApiBaseUrl"];
+            return View();
+        }
     }
 }
     

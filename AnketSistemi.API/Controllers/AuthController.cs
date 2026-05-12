@@ -1,8 +1,10 @@
 ﻿using AnketSistemi.API.DTOs;
 using AnketSistemi.API.Models;
 using AnketSistemi.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace AnketSistemi.API.Controllers
 {
@@ -58,6 +60,52 @@ namespace AnketSistemi.API.Controllers
             }
 
             return Unauthorized(new { message = "E-posta veya sifre hatali!" });
+        }
+        [Authorize]
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return NotFound();
+
+            return Ok(new
+            {
+                fullName = user.FullName,
+                email = user.Email
+            });
+        }
+
+        [Authorize]
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return NotFound();
+
+            if (!string.IsNullOrEmpty(dto.FullName))
+                user.FullName = dto.FullName;
+
+            IdentityResult? passwordResult = null;
+            if (!string.IsNullOrEmpty(dto.NewPassword))
+            {
+                // Mevcut şifreyi doğrula
+                var check = await _userManager.CheckPasswordAsync(user, dto.CurrentPassword);
+                if (!check) return BadRequest(new { message = "Mevcut şifre yanlış." });
+                passwordResult = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
+                if (!passwordResult.Succeeded)
+                    return BadRequest(passwordResult.Errors);
+            }
+
+            if (!string.IsNullOrEmpty(dto.FullName))
+            {
+                var updateResult = await _userManager.UpdateAsync(user);
+                if (!updateResult.Succeeded)
+                    return BadRequest(updateResult.Errors);
+            }
+
+            return Ok(new { message = "Profil güncellendi." });
         }
     }
 }

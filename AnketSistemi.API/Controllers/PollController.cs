@@ -190,5 +190,61 @@ namespace AnketSistemi.API.Controllers
 
             return Ok(new { pollTitle = poll.Title, statistics = results });
         }
+        // Soru güncelleme
+        [Authorize(Roles = "Admin")]
+        [HttpPut("Question/{id}")]
+        public async Task<IActionResult> UpdateQuestion(int id, PollQuestionDto model, [FromServices] IGenericRepository<PollQuestion> questionRepo)
+        {
+            var question = await questionRepo.GetByIdAsync(id);
+            if (question == null) return NotFound();
+
+            question.QuestionText = model.QuestionText;
+            question.IsMandatory = model.IsMandatory;
+            question.Format = (QuestionFormat)model.Format;
+            questionRepo.Update(question);
+            await questionRepo.SaveAsync();
+            return Ok(new { status = true, message = "Soru güncellendi." });
+        }
+
+        // Seçenek güncelleme
+        [Authorize(Roles = "Admin")]
+        [HttpPut("Choice/{id}")]
+        public async Task<IActionResult> UpdateChoice(int id, QuestionChoiceDto model, [FromServices] IGenericRepository<QuestionChoice> choiceRepo)
+        {
+            var choice = await choiceRepo.GetByIdAsync(id);
+            if (choice == null) return NotFound();
+
+            choice.ChoiceText = model.ChoiceText;
+            choice.OrderIndex = model.OrderIndex;
+            choiceRepo.Update(choice);
+            await choiceRepo.SaveAsync();
+            return Ok(new { status = true, message = "Seçenek güncellendi." });
+        }
+
+        // Soru silme (pasif yap)
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("Question/{id}")]
+        public async Task<IActionResult> DeleteQuestion(int id, [FromServices] IGenericRepository<PollQuestion> questionRepo)
+        {
+            var question = await questionRepo.GetByIdAsync(id);
+            if (question == null) return NotFound();
+            question.IsActive = false;
+            questionRepo.Update(question);
+            await questionRepo.SaveAsync();
+            return Ok(new { status = true, message = "Soru pasif yapıldı." });
+        }
+
+        // Seçenek silme (pasif yap)
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("Choice/{id}")]
+        public async Task<IActionResult> DeleteChoice(int id, [FromServices] IGenericRepository<QuestionChoice> choiceRepo)
+        {
+            var choice = await choiceRepo.GetByIdAsync(id);
+            if (choice == null) return NotFound();
+            choice.IsActive = false;
+            choiceRepo.Update(choice);
+            await choiceRepo.SaveAsync();
+            return Ok(new { status = true, message = "Seçenek pasif yapıldı." });
+        }
     }
 }
