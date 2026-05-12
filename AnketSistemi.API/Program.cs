@@ -78,7 +78,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+
 
 // BUG FIX #2: CORS middleware - UseAuthentication'dan ÖNCE olmali
 app.UseCors("AllowMVC");
@@ -88,4 +88,52 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+// --- OTOMATİK VERİ EKLEME (SEEDING) İŞLEMİ BAŞLANGICI ---
+// --- OTOMATİK VERİ EKLEME (SEEDING) İŞLEMİ BAŞLANGICI ---
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var userManager = services.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<AnketSistemi.API.Models.AppUser>>();
+        var roleManager = services.GetRequiredService<Microsoft.AspNetCore.Identity.RoleManager<AnketSistemi.API.Models.AppRole>>();
+
+        // 1. Rolleri Kontrol Et ve Yoksa Oluştur
+        if (!await roleManager.RoleExistsAsync("Admin"))
+            await roleManager.CreateAsync(new AnketSistemi.API.Models.AppRole { Name = "Admin" });
+
+        if (!await roleManager.RoleExistsAsync("User"))
+            await roleManager.CreateAsync(new AnketSistemi.API.Models.AppRole { Name = "User" });
+
+        // 2. Otomatik Admin Hesabı Oluştur
+        string adminEmail = "sistem@anketsistemi.com";
+        string adminPass = "Anket123*"; // Identity varsayılan olarak büyük/küçük harf, rakam ve özel karakter ister
+
+        if (await userManager.FindByEmailAsync(adminEmail) == null)
+        {
+            var adminUser = new AnketSistemi.API.Models.AppUser
+            {   
+                UserName = adminEmail, // Giriş için e-posta kullanacağız
+                Email = adminEmail,
+                FullName = "Sistem Yöneticisi"
+            };
+
+            var result = await userManager.CreateAsync(adminUser, adminPass);
+            if (result.Succeeded)
+            {
+                // Hesaba Admin yetkisini ver
+                await userManager.AddToRoleAsync(adminUser, "Admin");
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("Seeding Hatası: " + ex.Message);
+    }
+}
+// --- OTOMATİK VERİ EKLEME BİTİŞİ ---
+
+app.Run(); // Bu satır zaten en altta vardı
+// --- OTOMATİK VERİ EKLEME BİTİŞİ ---
+
+app.Run(); // Bu satır zaten en altta vardı
