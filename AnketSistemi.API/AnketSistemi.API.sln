@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36518.9
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnketSistemi.API", "AnketSistemi.API.csproj", "{2E64B036-1178-451C-9AC4-859F460A33C8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnketSistemi.MVC", "..\AnketSistemi.MVC\AnketSistemi.MVC.csproj", "{394AA302-8323-439B-B595-B39A6B199BB7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2E64B036-1178-451C-9AC4-859F460A33C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E64B036-1178-451C-9AC4-859F460A33C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E64B036-1178-451C-9AC4-859F460A33C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E64B036-1178-451C-9AC4-859F460A33C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{394AA302-8323-439B-B595-B39A6B199BB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{394AA302-8323-439B-B595-B39A6B199BB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{394AA302-8323-439B-B595-B39A6B199BB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{394AA302-8323-439B-B595-B39A6B199BB7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1701FB9A-1929-4BAB-90D2-167022073211}
+	EndGlobalSection
+EndGlobal
