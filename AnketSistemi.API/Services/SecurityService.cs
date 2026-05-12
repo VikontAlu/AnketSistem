@@ -36,15 +36,15 @@ namespace AnketSistemi.API.Services
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
 
-            // appsettings.json'dan okuyacağımız gizli anahtar
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtConfig:Secret"]));
+            // appsettings.json'daki "Jwt" bölümünden okuyoruz
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: _config["JwtConfig:Issuer"],
-                audience: _config["JwtConfig:Audience"],
+                issuer: _config["Jwt:Issuer"],
+                audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddDays(7), // Token 7 gün geçerli
+                expires: DateTime.Now.AddDays(7),
                 signingCredentials: creds
             );
 

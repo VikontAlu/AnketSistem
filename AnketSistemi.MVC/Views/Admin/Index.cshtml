@@ -35,7 +35,7 @@
         $(document).ready(function() {
             // API'den tüm anketleri çek
             $.ajax({
-                url: "https://localhost:7122/api/Poll", // KENDİ PORTUNU YAZMAYI UNUTMA
+                url: "https://localhost:5229/api/Poll", // KENDİ PORTUNU YAZMAYI UNUTMA
                 type: "GET",
                 // Token'ı başlığa ekliyoruz (Gelecekte sadece adminler görsün diye güvenlik için)
                 headers: { "Authorization": "Bearer " + localStorage.getItem("token") },
