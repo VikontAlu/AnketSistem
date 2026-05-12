@@ -7,6 +7,7 @@ using System.Text;
 
 namespace AnketSistemi.API.Services
 {
+
     public class SecurityService : ISecurityService
     {
         private readonly UserManager<AppUser> _userManager;
@@ -27,8 +28,8 @@ namespace AnketSistemi.API.Services
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Name, user.FullName ?? user.UserName)
+                new Claim(ClaimTypes.Email, user.Email!),
+                new Claim(ClaimTypes.Name, user.FullName ?? user.UserName ?? "")
             };
 
             foreach (var role in userRoles)
@@ -36,8 +37,7 @@ namespace AnketSistemi.API.Services
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
 
-            // appsettings.json'daki "Jwt" bölümünden okuyoruz
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(

@@ -1,30 +1,31 @@
 ﻿@{
-    ViewData["Title"] = "Gösterge Paneli";
-    Layout = "~/Views/Shared/_AdminLayout.cshtml"; // Kendi özel admin layoutumuzu kullanıyoruz
+    ViewData["Title"] = "Gosterge Paneli";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var apiBaseUrl = ViewBag.ApiBaseUrl as string ?? "http://localhost:5229";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold">Gösterge Paneli</h2>
-    <button class="btn btn-primary"><i class="bi bi-plus-lg"></i> Yeni Anket Oluştur</button>
+    <h2 class="fw-bold">Gosterge Paneli</h2>
+    <a href="/Admin/CreatePoll" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Yeni Anket Olustur</a>
 </div>
 
 <div class="card shadow-sm border-0">
     <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
-        <h5 class="fw-bold text-secondary">Sistemdeki Tüm Anketler</h5>
+        <h5 class="fw-bold text-secondary">Sistemdeki Tum Anketler</h5>
     </div>
     <div class="card-body">
         <table class="table table-hover align-middle">
             <thead class="table-light">
                 <tr>
-                    <th>Anket Başlığı</th>
-                    <th>Oluşturulma Tarihi</th>
-                    <th>Görüntülenme</th>
+                    <th>Anket Basligi</th>
+                    <th>Soru Sayisi</th>
+                    <th>Bitis Tarihi</th>
                     <th>Durum</th>
-                    <th>İşlemler</th>
+                    <th>Islemler</th>
                 </tr>
             </thead>
             <tbody id="adminPollTable">
-                <tr><td colspan="5" class="text-center text-muted">Veriler API'den yükleniyor...</td></tr>
+                <tr><td colspan="5" class="text-center text-muted">Veriler API'den yukleniyor...</td></tr>
             </tbody>
         </table>
     </div>
@@ -32,28 +33,28 @@
 
 @section Scripts {
     <script>
+        const apiBaseUrl = "@apiBaseUrl";
+
         $(document).ready(function() {
-            // API'den tüm anketleri çek
             $.ajax({
-                url: "https://localhost:5229/api/Poll", // KENDİ PORTUNU YAZMAYI UNUTMA
+                url: `${apiBaseUrl}/api/Poll`,
                 type: "GET",
-                // Token'ı başlığa ekliyoruz (Gelecekte sadece adminler görsün diye güvenlik için)
                 headers: { "Authorization": "Bearer " + localStorage.getItem("token") },
                 success: function(data) {
                     let rows = "";
                     if (data.length === 0) {
-                        rows = "<tr><td colspan='5' class='text-center text-warning'>Henüz anket eklenmemiş.</td></tr>";
+                        rows = "<tr><td colspan='5' class='text-center text-warning'>Henuz anket eklenmemis.</td></tr>";
                     } else {
                         data.forEach(function(poll) {
                             rows += `
                                 <tr>
                                     <td class="fw-bold">${poll.title}</td>
-                                    <td>${new Date().toLocaleDateString('tr-TR')}</td>
-                                    <td><span class="badge bg-info text-dark">${poll.totalViews || 0} Görüntülenme</span></td>
+                                    <td><span class="badge bg-secondary">${poll.questionCount} Soru</span></td>
+                                    <td>${new Date(poll.expireDate).toLocaleDateString('tr-TR')}</td>
                                     <td><span class="badge bg-success">Aktif</span></td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></button>
-                                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        <a href="/Admin/AddQuestion/${poll.id}" class="btn btn-sm btn-outline-success"><i class="bi bi-plus"></i> Soru Ekle</a>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deletePoll(${poll.id})"><i class="bi bi-trash"></i></button>
                                     </td>
                                 </tr>
                             `;
@@ -62,9 +63,24 @@
                     $("#adminPollTable").html(rows);
                 },
                 error: function(err) {
-                    $("#adminPollTable").html("<tr><td colspan='5' class='text-center text-danger'>Veriler çekilemedi! API çalışıyor mu?</td></tr>");
+                    $("#adminPollTable").html("<tr><td colspan='5' class='text-center text-danger'>Veriler cekilemedi! API calisiyor mu?</td></tr>");
                 }
             });
         });
+
+        function deletePoll(id) {
+            if (!confirm("Bu anketi pasif hale getirmek istediginize emin misiniz?")) return;
+            $.ajax({
+                url: `${apiBaseUrl}/api/Poll/${id}`,
+                type: "DELETE",
+                headers: { "Authorization": "Bearer " + localStorage.getItem("token") },
+                success: function() {
+                    location.reload();
+                },
+                error: function() {
+                    alert("Silme islemi basarisiz.");
+                }
+            });
+        }
     </script>
 }

@@ -1,12 +1,13 @@
 ﻿@{
     Layout = null;
+    var apiBaseUrl = ViewBag.ApiBaseUrl as string ?? "http://localhost:5229";
 }
 
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="utf-8" />
-    <title>Kayıt Ol | Anket Sistemi</title>
+    <title>Kayit Ol | Anket Sistemi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -36,32 +37,35 @@
 
     <div class="card register-card p-4">
         <div class="text-center mb-4">
-            <h3 class="fw-bold text-success">Yeni Hesap Oluştur</h3>
-            <p class="text-muted">Anket Sistemine Katılın</p>
+            <h3 class="fw-bold text-success">Yeni Hesap Olustur</h3>
+            <p class="text-muted">Anket Sistemine Katilin</p>
         </div>
         <div id="alertBox" class="alert d-none"></div>
         <form id="registerForm">
             <div class="mb-3">
                 <label class="form-label fw-bold">Ad Soyad</label>
-                <input type="text" id="fullName" class="form-control form-control-lg" placeholder="Adınız Soyadınız" required>
+                <input type="text" id="fullName" class="form-control form-control-lg" placeholder="Adiniz Soyadiniz" required>
             </div>
             <div class="mb-3">
                 <label class="form-label fw-bold">E-Posta</label>
                 <input type="email" id="email" class="form-control form-control-lg" placeholder="ornek@mail.com" required>
             </div>
             <div class="mb-4">
-                <label class="form-label fw-bold">Şifre</label>
-                <input type="password" id="password" class="form-control form-control-lg" placeholder="******" required>
+                <label class="form-label fw-bold">Sifre</label>
+                <input type="password" id="password" class="form-control form-control-lg" placeholder="En az 6 karakter" required>
             </div>
-            <button type="submit" class="btn btn-success w-100 fw-bold">Kayıt Ol</button>
+            <button type="submit" class="btn btn-success w-100 fw-bold">Kayit Ol</button>
             <div class="text-center mt-3">
-                <a href="/Auth/Login" class="text-decoration-none text-primary">Zaten hesabın var mı? Giriş Yap</a>
+                <a href="/Auth/Login" class="text-decoration-none text-primary">Zaten hesabin var mi? Giris Yap</a>
             </div>
         </form>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        // BUG FIX #7: API URL Razor'dan geliyor
+        const apiBaseUrl = "@apiBaseUrl";
+
         $(document).ready(function () {
             $("#registerForm").submit(function (e) {
                 e.preventDefault();
@@ -72,18 +76,27 @@
                     password: $("#password").val()
                 };
 
-                // DİKKAT: 7122 Yazan yeri API projenin portu ile değiştirmeyi unutma!
                 $.ajax({
-                    url: "https://localhost:5229/api/Auth/register",
+                    // BUG FIX #3: Tutarsiz https/http giderildi, Razor'dan geliyor
+                    url: apiBaseUrl + "/api/Auth/register",
                     type: "POST",
                     contentType: "application/json",
                     data: JSON.stringify(registerData),
                     success: function (response) {
-                        $("#alertBox").removeClass("d-none alert-danger").addClass("alert-success").text("Kayıt Başarılı! Giriş sayfasına yönlendiriliyorsunuz...");
+                        $("#alertBox").removeClass("d-none alert-danger").addClass("alert-success")
+                                      .text("Kayit Basarili! Giris sayfasina yonlendiriliyorsunuz...");
                         setTimeout(() => { window.location.href = "/Auth/Login"; }, 2000);
                     },
                     error: function (err) {
-                        $("#alertBox").removeClass("d-none alert-success").addClass("alert-danger").text("Hata: Kayıt işlemi başarısız. Bilgileri kontrol edin.");
+                        let errorMsg = "Hata: Kayit islemi basarisiz.";
+                        if (err.responseJSON) {
+                            // Identity hata mesajlarini goster
+                            const errors = err.responseJSON;
+                            if (Array.isArray(errors)) {
+                                errorMsg = errors.map(e => e.description).join(" ");
+                            }
+                        }
+                        $("#alertBox").removeClass("d-none alert-success").addClass("alert-danger").text(errorMsg);
                     }
                 });
             });

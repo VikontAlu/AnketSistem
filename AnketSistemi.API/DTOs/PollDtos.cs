@@ -4,7 +4,7 @@ namespace AnketSistemi.API.DTOs
 {
     public class PollCreateDto
     {
-        [Required(ErrorMessage = "Anket başlığı zorunludur.")]
+        [Required(ErrorMessage = "Anket basligi zorunludur.")]
         public string Title { get; set; } = string.Empty;
         public string? Detail { get; set; }
 
@@ -16,6 +16,7 @@ namespace AnketSistemi.API.DTOs
     {
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
+        public string? Detail { get; set; }
         public DateTime CreatedAt { get; set; }
         public int QuestionCount { get; set; }
     }

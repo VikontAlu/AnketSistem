@@ -12,21 +12,18 @@ namespace AnketSistemi.API.Data
         public DbSet<PollQuestion> PollQuestions { get; set; }
         public DbSet<QuestionChoice> QuestionChoices { get; set; }
         public DbSet<UserResponse> UserResponses { get; set; }
-
         public DbSet<PollFeedback> PollFeedbacks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
 
-            // 1. Feedback tablosu için silme kısıtlaması
             builder.Entity<PollFeedback>()
                 .HasOne(f => f.User)
                 .WithMany()
                 .HasForeignKey(f => f.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // 2. İŞTE HATAYI ÇÖZEN KISIM: UserResponses Tablosu için çoklu silme çakışmasını engelliyoruz
             builder.Entity<UserResponse>()
                 .HasOne(ur => ur.PollQuestion)
                 .WithMany()

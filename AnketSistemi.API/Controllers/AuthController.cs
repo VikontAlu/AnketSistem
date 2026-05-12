@@ -22,7 +22,7 @@ namespace AnketSistemi.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
         {
-            await _securityService.SeedRolesAsync(); // İlk kayıtta rolleri oluşturmayı garantiye alalım
+            await _securityService.SeedRolesAsync();
 
             var user = new AppUser
             {
@@ -35,9 +35,8 @@ namespace AnketSistemi.API.Controllers
 
             if (result.Succeeded)
             {
-                // İlk kayıt olanı User yapalım, adminliği biz veritabanından elle veya ayrı metotla veririz.
                 await _userManager.AddToRoleAsync(user, "User");
-                return Ok(new { message = "Kayıt başarılı!" });
+                return Ok(new { message = "Kayit basarili!" });
             }
 
             return BadRequest(result.Errors);
@@ -51,10 +50,14 @@ namespace AnketSistemi.API.Controllers
             if (user != null && await _userManager.CheckPasswordAsync(user, dto.Password))
             {
                 var token = await _securityService.GenerateJwtTokenAsync(user);
-                return Ok(new { token = token, message = "Giriş başarılı" });
+                var roles = await _userManager.GetRolesAsync(user);
+                var isAdmin = roles.Contains("Admin");
+
+                // BUG FIX: role bilgisini de donuyoruz ki MVC tarafinda dogru yonlendirme yapabilelim
+                return Ok(new { token = token, isAdmin = isAdmin, message = "Giris basarili" });
             }
 
-            return Unauthorized(new { message = "E-posta veya şifre hatalı!" });
+            return Unauthorized(new { message = "E-posta veya sifre hatali!" });
         }
     }
 }

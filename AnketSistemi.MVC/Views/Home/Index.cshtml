@@ -1,38 +1,54 @@
 ﻿@{
     ViewData["Title"] = "Ana Sayfa";
+    var apiBaseUrl = ViewBag.ApiBaseUrl as string ?? "http://localhost:5229";
 }
 
 <div class="text-center mb-5">
-    <h1 class="display-4 fw-bold">Anketlere Katılın!</h1>
-    <p class="lead text-muted">Aşağıdaki anketlerden dilediğinize katılıp fikirlerinizi belirtebilirsiniz.</p>
+    <h1 class="display-4 fw-bold">Anketlere Katilin!</h1>
+    <p class="lead text-muted">Asagidaki anketlerden dilediginize katilip fikirlerinizi belirtebilirsiniz.</p>
+</div>
+
+<div class="mb-4">
+    <input type="text" id="searchInput" class="form-control" placeholder="Anket ara..." style="max-width:400px;">
 </div>
 
 <div class="row" id="pollList">
     <div class="text-center w-100" id="loading">
         <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2 text-muted">Anketler yükleniyor, lütfen bekleyin...</p>
+        <p class="mt-2 text-muted">Anketler yukleniyor, lutfen bekleyin...</p>
     </div>
 </div>
 
 @section Scripts {
     <script>
+        const apiBaseUrl = "@apiBaseUrl";
+
         $(document).ready(function() {
             loadPolls();
+
+            let searchTimer;
+            $("#searchInput").on("input", function() {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(() => loadPolls($(this).val()), 400);
+            });
         });
 
-        function loadPolls() {
-            // DİKKAT: Buradaki URL kısmına API projenin port numarasını yaz!
-            const apiUrl = "https://localhost:5229/api/Poll";
+        function loadPolls(search = "") {
+            const url = search
+                ? `${apiBaseUrl}/api/Poll?search=${encodeURIComponent(search)}`
+                : `${apiBaseUrl}/api/Poll`;
+
+            $("#loading").show();
 
             $.ajax({
-                url: apiUrl,
+                url: url,
                 type: "GET",
                 success: function(data) {
                     $("#loading").hide();
                     let html = "";
 
-                    if(data.length === 0) {
-                        $("#pollList").html("<div class='alert alert-warning text-center w-100'>Şu an aktif anket bulunmamaktadır.</div>");
+                    if (data.length === 0) {
+                        $("#pollList").html("<div class='alert alert-warning text-center w-100'>Su an aktif anket bulunmamaktadir.</div>");
                         return;
                     }
 
@@ -42,10 +58,11 @@
                             <div class="card h-100 shadow-sm border-0">
                                 <div class="card-body">
                                     <h5 class="card-title fw-bold text-primary">${poll.title}</h5>
-                                    <p class="card-text text-muted">${poll.detail ? poll.detail : 'Bu anket için açıklama girilmemiştir.'}</p>
+                                    <p class="card-text text-muted">${poll.detail ? poll.detail : 'Bu anket icin aciklama girilmemistir.'}</p>
+                                    <small class="text-muted">${poll.questionCount} soru</small>
                                 </div>
                                 <div class="card-footer bg-white border-0 text-end pb-3">
-                                    <a href="/Home/PollDetail/${poll.id}" class="btn btn-outline-primary btn-sm fw-bold">Ankete Git ➡</a>
+                                    <a href="/Home/PollDetail/${poll.id}" class="btn btn-outline-primary btn-sm fw-bold">Ankete Git &rarr;</a>
                                 </div>
                             </div>
                         </div>`;
@@ -55,7 +72,7 @@
                 },
                 error: function(err) {
                     $("#loading").hide();
-                    $("#pollList").html("<div class='alert alert-danger w-100 text-center'>Anketler yüklenemedi. API projesinin çalıştığından ve Port numarasının doğru olduğundan emin olun!</div>");
+                    $("#pollList").html("<div class='alert alert-danger w-100 text-center'>Anketler yuklenemedi. API projesinin calistigindan emin olun!</div>");
                 }
             });
         }

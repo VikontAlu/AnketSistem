@@ -1,11 +1,12 @@
 ﻿@{
     ViewData["Title"] = "Ankete Soru Ekle";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var apiBaseUrl = ViewBag.ApiBaseUrl as string ?? "http://localhost:5229";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold text-dark"><i class="bi bi-question-square text-success me-2"></i>Soru Ekle</h2>
-    <a href="/Admin/Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Panele Dön</a>
+    <a href="/Admin/Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Panele Don</a>
 </div>
 
 <div class="row">
@@ -17,25 +18,25 @@
                 <form id="addQuestionForm">
                     <div class="mb-4">
                         <label class="form-label fw-bold">Soru Metni</label>
-                        <input type="text" id="questionText" class="form-control form-control-lg" placeholder="Örn: En sevdiğiniz programlama dili hangisidir?" required>
+                        <input type="text" id="questionText" class="form-control form-control-lg" placeholder="Orn: En sevdiginiz programlama dili hangisidir?" required>
                     </div>
 
                     <div class="mb-3 d-flex justify-content-between align-items-center">
-                        <label class="form-label fw-bold mb-0">Seçenekler (Şıklar)</label>
+                        <label class="form-label fw-bold mb-0">Secenekler (Siklar)</label>
                         <button type="button" class="btn btn-sm btn-outline-primary" id="addChoiceBtn">
-                            <i class="bi bi-plus"></i> Yeni Seçenek Ekle
+                            <i class="bi bi-plus"></i> Yeni Secenek Ekle
                         </button>
                     </div>
 
                     <div id="choicesContainer">
                         <div class="input-group mb-2 choice-row">
-                            <span class="input-group-text bg-light"><i class="bi bi-record-circle text-primary"></i></span>
-                            <input type="text" class="form-control choice-input" placeholder="Seçenek 1" required>
+                            <span class="input-group-text bg-light">A</span>
+                            <input type="text" class="form-control choice-input" placeholder="Secenek 1" required>
                             <button type="button" class="btn btn-danger remove-choice" disabled><i class="bi bi-trash"></i></button>
                         </div>
                         <div class="input-group mb-2 choice-row">
-                            <span class="input-group-text bg-light"><i class="bi bi-record-circle text-primary"></i></span>
-                            <input type="text" class="form-control choice-input" placeholder="Seçenek 2" required>
+                            <span class="input-group-text bg-light">B</span>
+                            <input type="text" class="form-control choice-input" placeholder="Secenek 2" required>
                             <button type="button" class="btn btn-danger remove-choice"><i class="bi bi-trash"></i></button>
                         </div>
                     </div>
@@ -55,76 +56,92 @@
 
 @section Scripts {
     <script>
-        const currentPollId = @ViewBag.PollId; // Controller'dan gelen Anket ID
-        const apiUrl = "https://localhost:5229"; // KENDİ API PORTUNU YAZMAYI UNUTMA!
+        const currentPollId = @ViewBag.PollId;
+        const apiBaseUrl = "@apiBaseUrl";
+
+        const letters = ["A","B","C","D","E","F","G","H"];
 
         $(document).ready(function () {
 
-            // Dinamik Seçenek Ekleme
             $("#addChoiceBtn").click(function() {
-                let choiceCount = $(".choice-row").length + 1;
+                let choiceCount = $(".choice-row").length;
+                let letter = letters[choiceCount] || (choiceCount + 1);
                 let newRow = `
                     <div class="input-group mb-2 choice-row">
-                        <span class="input-group-text bg-light"><i class="bi bi-record-circle text-primary"></i></span>
-                        <input type="text" class="form-control choice-input" placeholder="Seçenek ${choiceCount}" required>
+                        <span class="input-group-text bg-light">${letter}</span>
+                        <input type="text" class="form-control choice-input" placeholder="Secenek ${choiceCount + 1}" required>
                         <button type="button" class="btn btn-danger remove-choice"><i class="bi bi-trash"></i></button>
                     </div>
                 `;
                 $("#choicesContainer").append(newRow);
             });
 
-            // Seçenek Silme
             $(document).on("click", ".remove-choice", function() {
-                if ($(".choice-row").length > 2) { // En az 2 seçenek kalmasını zorla
+                if ($(".choice-row").length > 2) {
                     $(this).closest(".choice-row").remove();
                 } else {
-                    alert("Bir sorunun en az 2 seçeneği olmalıdır!");
+                    alert("Bir sorunun en az 2 secenegi olmalidir!");
                 }
             });
 
-            // Formu API'ye Gönderme
             $("#addQuestionForm").submit(function (e) {
                 e.preventDefault();
 
-                // Token kontrolü
                 const token = localStorage.getItem("token");
                 if (!token) {
                     window.location.href = "/Auth/Login";
                     return;
                 }
 
-                // Seçenekleri topla
-                let choicesArray = [];
-                $(".choice-input").each(function() {
-                    let val = $(this).val().trim();
-                    if (val) {
-                        choicesArray.push({ text: val }); // API'deki QuestionChoice modeline uygun obje
-                    }
-                });
-
-                // API'nin beklediği PollQuestion nesnesi
+                // Once soruyu ekle, sonra secenekleri ekle
                 const questionData = {
                     pollId: currentPollId,
-                    text: $("#questionText").val(),
-                    choices: choicesArray
+                    questionText: $("#questionText").val(),
+                    format: 2, // SingleChoice
+                    isMandatory: true
                 };
 
                 $.ajax({
-                    url: `${apiUrl}/api/PollQuestion`,
+                    url: `${apiBaseUrl}/api/Poll/AddQuestion`,
                     type: "POST",
                     contentType: "application/json",
                     headers: { "Authorization": "Bearer " + token },
                     data: JSON.stringify(questionData),
-                    success: function (response) {
-                        $("#alertBox").removeClass("d-none alert-danger").addClass("alert-success")
-                                      .text("Soru başarıyla eklendi! Sayfa temizleniyor...");
+                    success: function (qResponse) {
+                        const questionId = qResponse.questionId;
 
-                        // Formu sıfırla ki admin peş peşe soru ekleyebilsin
-                        $("#addQuestionForm")[0].reset();
-                        // Şıkları tekrar 2 taneye düşür
-                        $("#choicesContainer .choice-row:gt(1)").remove();
+                        // Secenekleri sirayla ekle
+                        let choicePromises = [];
+                        let orderIndex = 0;
+                        $(".choice-input").each(function() {
+                            let val = $(this).val().trim();
+                            if (val) {
+                                choicePromises.push($.ajax({
+                                    url: `${apiBaseUrl}/api/Poll/AddChoice`,
+                                    type: "POST",
+                                    contentType: "application/json",
+                                    headers: { "Authorization": "Bearer " + token },
+                                    data: JSON.stringify({
+                                        pollQuestionId: questionId,
+                                        choiceText: val,
+                                        orderIndex: orderIndex++
+                                    })
+                                }));
+                            }
+                        });
 
-                        setTimeout(() => { $("#alertBox").addClass("d-none"); }, 3000);
+                        $.when.apply($, choicePromises).done(function() {
+                            $("#alertBox").removeClass("d-none alert-danger").addClass("alert-success")
+                                          .text("Soru ve secenekler basariyla eklendi!");
+
+                            $("#addQuestionForm")[0].reset();
+                            $("#choicesContainer .choice-row:gt(1)").remove();
+
+                            setTimeout(() => { $("#alertBox").addClass("d-none"); }, 3000);
+                        }).fail(function() {
+                            $("#alertBox").removeClass("d-none alert-success").addClass("alert-danger")
+                                          .text("Soru eklendi fakat bazi secenekler eklenemedi.");
+                        });
                     },
                     error: function (err) {
                         $("#alertBox").removeClass("d-none alert-success").addClass("alert-danger")

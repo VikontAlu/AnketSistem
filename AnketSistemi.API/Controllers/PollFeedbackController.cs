@@ -8,7 +8,7 @@ namespace AnketSistemi.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Sadece sisteme giriş yapmış kullanıcılar puan verebilir
+    [Authorize]
     public class PollFeedbackController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -21,18 +21,17 @@ namespace AnketSistemi.API.Controllers
         [HttpPost]
         public async Task<IActionResult> AddFeedback([FromBody] PollFeedback feedback)
         {
-            // İsteği atan kullanıcının ID'sini JWT Token içinden otomatik yakalıyoruz! (Tam bir profesyonel hareketi)
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (userId == null)
-                return Unauthorized("Kullanıcı bulunamadı.");
+                return Unauthorized("Kullanici bulunamadi.");
 
-            feedback.UserId = userId; // Token'dan gelen güvenli ID'yi basıyoruz
+            feedback.UserId = userId;
 
             _context.PollFeedbacks.Add(feedback);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Değerlendirmeniz başarıyla kaydedildi!" });
+            return Ok(new { message = "Degerlendirmeniz basariyla kaydedildi!" });
         }
     }
 }

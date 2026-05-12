@@ -7,7 +7,7 @@ namespace AnketSistemi.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")] // Sadece admin soru ekleyebilir güvenliği!
+    [Authorize(Roles = "Admin")]
     public class PollQuestionController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -20,12 +20,15 @@ namespace AnketSistemi.API.Controllers
         [HttpPost]
         public async Task<IActionResult> AddQuestion([FromBody] PollQuestion question)
         {
-            if (question == null) return BadRequest("Soru verisi boş olamaz.");
+            if (question == null) return BadRequest("Soru verisi bos olamaz.");
+
+            question.CreatedAt = DateTime.Now;
+            question.IsActive = true;
 
             _context.PollQuestions.Add(question);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Soru ve seçenekler başarıyla eklendi!" });
+            return Ok(new { message = "Soru ve secenekler basariyla eklendi!", questionId = question.Id });
         }
     }
 }

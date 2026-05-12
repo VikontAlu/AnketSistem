@@ -1,11 +1,12 @@
 ﻿@{
-    ViewData["Title"] = "Yeni Anket Oluştur";
-    Layout = "~/Views/Shared/_AdminLayout.cshtml"; // Admin temamızı kullanıyoruz
+    ViewData["Title"] = "Yeni Anket Olustur";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var apiBaseUrl = ViewBag.ApiBaseUrl as string ?? "http://localhost:5229";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold text-dark"><i class="bi bi-plus-circle-fill text-primary me-2"></i>Yeni Anket Oluştur</h2>
-    <a href="/Admin/Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Panele Dön</a>
+    <h2 class="fw-bold text-dark"><i class="bi bi-plus-circle-fill text-primary me-2"></i>Yeni Anket Olustur</h2>
+    <a href="/Admin/Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Panele Don</a>
 </div>
 
 <div class="card shadow-sm border-0" style="max-width: 800px;">
@@ -14,17 +15,17 @@
 
         <form id="createPollForm">
             <div class="mb-3">
-                <label class="form-label fw-bold">Anket Başlığı</label>
-                <input type="text" id="title" class="form-control form-control-lg" placeholder="Örn: 2026 Yazılım Trendleri" required>
+                <label class="form-label fw-bold">Anket Basligi</label>
+                <input type="text" id="title" class="form-control form-control-lg" placeholder="Orn: 2026 Yazilim Trendleri" required>
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-bold">Anket Açıklaması (Detay)</label>
-                <textarea id="detail" class="form-control" rows="3" placeholder="Kullanıcılara anketin amacını kısaca açıklayın..." required></textarea>
+                <label class="form-label fw-bold">Anket Aciklamasi (Detay)</label>
+                <textarea id="detail" class="form-control" rows="3" placeholder="Kullanicilara anketin amacini kisaca aciklayin..."></textarea>
             </div>
 
             <div class="mb-4">
-                <label class="form-label fw-bold">Bitiş Tarihi</label>
+                <label class="form-label fw-bold">Bitis Tarihi</label>
                 <input type="datetime-local" id="expireDate" class="form-control" required>
             </div>
 
@@ -39,8 +40,9 @@
 
 @section Scripts {
     <script>
+        const apiBaseUrl = "@apiBaseUrl";
+
         $(document).ready(function () {
-            // Bugünün tarihini varsayılan olarak yarına ayarlayalım (Kullanım kolaylığı)
             let tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
@@ -51,40 +53,35 @@
 
                 const token = localStorage.getItem("token");
                 if (!token) {
-                    alert("Oturumunuz düşmüş. Lütfen tekrar giriş yapın.");
+                    alert("Oturumunuz dusmis. Lutfen tekrar giris yapin.");
                     window.location.href = "/Auth/Login";
                     return;
                 }
 
-                // API'nin beklediği Poll modeli verileri
                 const pollData = {
                     title: $("#title").val(),
                     detail: $("#detail").val(),
-                    expireDate: $("#expireDate").val(),
-                    isActive: true
+                    expireDate: $("#expireDate").val()
                 };
 
-                // DİKKAT: Port numaranı kendi API projene göre düzelt!
                 $.ajax({
-                    url: "https://localhost:5229/api/Poll",
+                    url: `${apiBaseUrl}/api/Poll`,
                     type: "POST",
                     contentType: "application/json",
-                    headers: { "Authorization": "Bearer " + token }, // Güvenlik tokeni (Sadece admin/yetkili)
+                    headers: { "Authorization": "Bearer " + token },
                     data: JSON.stringify(pollData),
                     success: function (response) {
                         $("#alertBox").removeClass("d-none alert-danger").addClass("alert-success")
-                                      .text("Harika! Anket başarıyla oluşturuldu. Panele yönlendiriliyorsunuz...");
+                                      .text("Anket basariyla olusturuldu! Soru eklemek ister misiniz?");
 
-                        // Formu temizle ve butonu kilitle
-                        $("#createPollForm")[0].reset();
-                        $("button[type='submit']").prop("disabled", true);
-
-                        // 2 saniye sonra Admin paneline geri dön
-                        setTimeout(() => { window.location.href = "/Admin/Index"; }, 2000);
+                        // Anket olusturulduktan sonra soru ekleme sayfasina yonlendir
+                        setTimeout(() => {
+                            window.location.href = `/Admin/AddQuestion/${response.pollId}`;
+                        }, 1500);
                     },
                     error: function (err) {
                         $("#alertBox").removeClass("d-none alert-success").addClass("alert-danger")
-                                      .text("Hata: Anket oluşturulamadı. Lütfen bilgileri kontrol edin.");
+                                      .text("Hata: Anket olusturulamadi. Lutfen bilgileri kontrol edin.");
                     }
                 });
             });

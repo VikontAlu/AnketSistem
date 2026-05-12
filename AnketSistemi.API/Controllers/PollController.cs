@@ -1,5 +1,5 @@
 ﻿using AnketSistemi.API.DTOs;
-using AnketSistemi.API.Enums; // QuestionFormat enum'ı için
+using AnketSistemi.API.Enums;
 using AnketSistemi.API.Models;
 using AnketSistemi.API.Repositories;
 using Microsoft.AspNetCore.Authorization;
@@ -33,6 +33,7 @@ namespace AnketSistemi.API.Controllers
                 {
                     Id = p.Id,
                     Title = p.Title,
+                    Detail = p.Detail,
                     CreatedAt = p.CreatedAt,
                     QuestionCount = p.Questions!.Count
                 }).ToListAsync();
@@ -44,13 +45,35 @@ namespace AnketSistemi.API.Controllers
         public async Task<IActionResult> GetById(int id)
         {
             var poll = await _pollRepo.AsQueryable()
-                .Include(p => p.Questions!)
+                .Include(p => p.Questions!.Where(q => q.IsActive))
                     .ThenInclude(q => q.Choices)
                 .FirstOrDefaultAsync(p => p.Id == id && p.IsActive);
 
-            if (poll == null) return NotFound(new { message = "Anket bulunamadı." });
+            if (poll == null) return NotFound(new { message = "Anket bulunamadi." });
 
-            return Ok(poll);
+            // BUG FIX #5: MVC'nin bekledigine uygun sekilde camelCase field adlariyla donuyoruz
+            var result = new
+            {
+                id = poll.Id,
+                title = poll.Title,
+                detail = poll.Detail,
+                expireDate = poll.ExpireDate,
+                questions = poll.Questions!.Select(q => new
+                {
+                    id = q.Id,
+                    questionText = q.QuestionText,
+                    format = q.Format,
+                    isMandatory = q.IsMandatory,
+                    choices = q.Choices!.Where(c => c.IsActive).Select(c => new
+                    {
+                        id = c.Id,
+                        choiceText = c.ChoiceText,
+                        orderIndex = c.OrderIndex
+                    })
+                })
+            };
+
+            return Ok(result);
         }
 
         [Authorize(Roles = "Admin")]
@@ -61,7 +84,7 @@ namespace AnketSistemi.API.Controllers
             var poll = new Poll
             {
                 Title = model.Title,
-                Detail = model.Detail,
+                Detail = model.Detail ?? string.Empty,
                 ExpireDate = model.ExpireDate,
                 AppUserId = userId!,
                 CreatedAt = DateTime.Now,
@@ -70,12 +93,12 @@ namespace AnketSistemi.API.Controllers
 
             await _pollRepo.AddAsync(poll);
             await _pollRepo.SaveAsync();
-            return Ok(new { status = true, message = "Anket başarıyla oluşturuldu." });
+            return Ok(new { status = true, message = "Anket basariyla olusturuldu.", pollId = poll.Id });
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPost("AddQuestion")]
-        public async Task<IActionResult> AddQuestion(PollQuestionDto model, [FromServices] IGenericRepository<PollQuestion> questionRepo)
+        public async Task<IActionResult> AddQuestion(PollQuestion model, [FromServices] IGenericRepository<PollQuestion> questionRepo)
         {
             var question = new PollQuestion
             {
@@ -89,7 +112,7 @@ namespace AnketSistemi.API.Controllers
 
             await questionRepo.AddAsync(question);
             await questionRepo.SaveAsync();
-            return Ok(new { status = true, message = "Soru başarıyla eklendi." });
+            return Ok(new { status = true, message = "Soru basariyla eklendi.", questionId = question.Id });
         }
 
         [Authorize(Roles = "Admin")]
@@ -107,7 +130,7 @@ namespace AnketSistemi.API.Controllers
 
             await choiceRepo.AddAsync(choice);
             await choiceRepo.SaveAsync();
-            return Ok(new { status = true, message = "Seçenek başarıyla eklendi." });
+            return Ok(new { status = true, message = "Secenek basariyla eklendi." });
         }
 
         [Authorize(Roles = "Admin")]
@@ -115,7 +138,7 @@ namespace AnketSistemi.API.Controllers
         public async Task<IActionResult> Update(Poll model)
         {
             var poll = await _pollRepo.GetByIdAsync(model.Id);
-            if (poll == null) return NotFound(new { message = "Güncellenecek anket bulunamadı." });
+            if (poll == null) return NotFound(new { message = "Guncellenecek anket bulunamadi." });
 
             poll.Title = model.Title;
             poll.Detail = model.Detail;
@@ -124,7 +147,7 @@ namespace AnketSistemi.API.Controllers
 
             _pollRepo.Update(poll);
             await _pollRepo.SaveAsync();
-            return Ok(new { status = true, message = "Anket güncellendi." });
+            return Ok(new { status = true, message = "Anket guncellendi." });
         }
 
         [Authorize(Roles = "Admin")]
@@ -132,7 +155,7 @@ namespace AnketSistemi.API.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var poll = await _pollRepo.GetByIdAsync(id);
-            if (poll == null) return NotFound(new { message = "Silinecek anket bulunamadı." });
+            if (poll == null) return NotFound(new { message = "Silinecek anket bulunamadi." });
 
             poll.IsActive = false;
             _pollRepo.Update(poll);
@@ -140,7 +163,6 @@ namespace AnketSistemi.API.Controllers
             return Ok(new { status = true, message = "Anket pasif hale getirildi." });
         }
 
-        // GENEL VEYA ADMİN: Anket Sonuç İstatistikleri
         [HttpGet("{id}/Results")]
         public async Task<IActionResult> GetResults(int id, [FromServices] IGenericRepository<UserResponse> responseRepo)
         {
@@ -149,7 +171,7 @@ namespace AnketSistemi.API.Controllers
                     .ThenInclude(q => q.Choices)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
-            if (poll == null) return NotFound(new { message = "Anket bulunamadı." });
+            if (poll == null) return NotFound(new { message = "Anket bulunamadi." });
 
             var allResponses = await responseRepo.AsQueryable()
                 .Where(r => r.PollId == id)
@@ -157,12 +179,12 @@ namespace AnketSistemi.API.Controllers
 
             var results = poll.Questions!.Select(q => new
             {
-                Question = q.QuestionText,
-                TotalVotes = allResponses.Count(r => r.PollQuestionId == q.Id),
-                Choices = q.Choices!.Select(c => new
+                question = q.QuestionText,
+                totalVotes = allResponses.Count(r => r.PollQuestionId == q.Id),
+                choices = q.Choices!.Select(c => new
                 {
-                    Text = c.ChoiceText,
-                    VoteCount = allResponses.Count(r => r.SelectedChoiceId == c.Id)
+                    text = c.ChoiceText,
+                    voteCount = allResponses.Count(r => r.SelectedChoiceId == c.Id)
                 })
             });
 

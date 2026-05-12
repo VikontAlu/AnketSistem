@@ -11,7 +11,7 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-4">
             <div class="container">
-                <a class="navbar-brand fw-bold text-primary" asp-controller="Home" asp-action="Index">🚀 Anket Sistemi</a>
+                <a class="navbar-brand fw-bold text-primary" asp-controller="Home" asp-action="Index">&#128640; Anket Sistemi</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                     <span class="navbar-toggler-icon"></span>
                 </button>
@@ -35,22 +35,20 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-
         $(document).ready(function () {
             const token = localStorage.getItem("token");
+            const isAdmin = localStorage.getItem("isAdmin") === "true";
             let menuHtml = "";
 
             if (token) {
-
                 menuHtml = `
-                    <li class="nav-item"><a class="nav-link text-success fw-bold" href="#">Profilim</a></li>
-                    <li class="nav-item"><button class="btn btn-outline-danger btn-sm mt-1 ms-2" onclick="logout()">Çıkış Yap</button></li>
+                    <li class="nav-item">${isAdmin ? '<a class="nav-link text-warning fw-bold" href="/Admin/Index">Admin Panel</a>' : ''}</li>
+                    <li class="nav-item"><button class="btn btn-outline-danger btn-sm mt-1 ms-2" onclick="logout()">Cikis Yap</button></li>
                 `;
             } else {
-
                 menuHtml = `
-                    <li class="nav-item"><a class="nav-link text-dark" href="/Auth/Login">Giriş Yap</a></li>
-                    <li class="nav-item"><a class="btn btn-primary btn-sm mt-1 ms-2" href="/Auth/Register">Kayıt Ol</a></li>
+                    <li class="nav-item"><a class="nav-link text-dark" href="/Auth/Login">Giris Yap</a></li>
+                    <li class="nav-item"><a class="btn btn-primary btn-sm mt-1 ms-2" href="/Auth/Register">Kayit Ol</a></li>
                 `;
             }
             $("#authMenu").html(menuHtml);
@@ -58,6 +56,7 @@
 
         function logout() {
             localStorage.removeItem("token");
+            localStorage.removeItem("isAdmin");
             window.location.href = "/Auth/Login";
         }
     </script>

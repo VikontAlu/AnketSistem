@@ -4,16 +4,26 @@ namespace AnketSistemi.MVC.Controllers
 {
     public class AuthController : Controller
     {
+        private readonly IConfiguration _config;
+
+        public AuthController(IConfiguration config)
+        {
+            _config = config;
+        }
+
         [HttpGet]
         public IActionResult Login()
         {
+            ViewBag.ApiBaseUrl = _config["ApiBaseUrl"];
             return View();
         }
 
         [HttpGet]
         public IActionResult Register()
         {
+            ViewBag.ApiBaseUrl = _config["ApiBaseUrl"];
             return View();
         }
     }
 }
+    
