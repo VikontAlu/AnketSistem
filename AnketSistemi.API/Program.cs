@@ -136,4 +136,3 @@ using (var scope = app.Services.CreateScope())
 app.Run(); // Bu satır zaten en altta vardı
 // --- OTOMATİK VERİ EKLEME BİTİŞİ ---
 
-app.Run(); // Bu satır zaten en altta vardı
